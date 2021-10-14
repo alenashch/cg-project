@@ -5,6 +5,7 @@
 BoundingVolumeHierarchy::BoundingVolumeHierarchy(Scene* pScene)
     : m_pScene(pScene)
 {
+    //test push
 }
 
 // Return the depth of the tree that you constructed. This is used to tell the
