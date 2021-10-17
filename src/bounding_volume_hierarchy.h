@@ -23,18 +23,20 @@ class BoundingVolumeHierarchy {
     };
 
 public:
+    int MAX_LEVEL = 20;
+    int levels = 0.0;
+    std::vector<Node> nodes;
+
     BoundingVolumeHierarchy(Scene* pScene);
 
     void countLevels(std::vector<Triangle> triangles, int level);
+    //void countLevels(std::vector<Node> nodes, int level);
+
 
     AxisAlignedBox createAABB(std::vector<Triangle> triangles);
 
     void constructBVHTree(std::vector<Triangle> triangles, int index, int level, int axis);
-    int MAX_LEVEL = 20;
-
-    int levels = std::numeric_limits<float>::min();
-
-    std::vector<Node> nodes;
+    
 
     // Implement these two functions for the Visual Debug.
     // The first function should return how many levels there are in the tree that you have constructed.
