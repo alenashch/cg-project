@@ -4,14 +4,44 @@
 #include <array>
 #include <span>
 
+struct Triangle
+{
+    glm::vec3 centroid;
+    glm::vec3 min;
+    glm::vec3 max;
+
+};
+
 class BoundingVolumeHierarchy {
+
+    struct Node {
+        int index;
+        int level;
+        bool isLeaf = false;
+        AxisAlignedBox aabb;
+        std::vector<Triangle> triangles;
+    };
+
 public:
+    int MAX_LEVEL = 20;
+    int levels = 0.0;
+    std::vector<Node> nodes;
+
     BoundingVolumeHierarchy(Scene* pScene);
+
+    void countLevels(std::vector<Triangle> triangles, int level);
+    //void countLevels(std::vector<Node> nodes, int level);
+
+
+    AxisAlignedBox createAABB(std::vector<Triangle> triangles);
+
+    void constructBVHTree(std::vector<Triangle> triangles, int index, int level, int axis);
+    
 
     // Implement these two functions for the Visual Debug.
     // The first function should return how many levels there are in the tree that you have constructed.
     // The second function should draw the bounding boxes of the nodes at the selected level.
-    int numLevels() const;
+    int numLevels();
     void debugDraw(int level);
 
     // Return true if something is hit, returns false otherwise.
