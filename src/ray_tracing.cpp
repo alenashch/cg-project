@@ -75,6 +75,15 @@ bool intersectRayWithTriangle(const glm::vec3& v0, const glm::vec3& v1, const gl
 
     glm::vec3 p = ray.origin + ray.t * ray.direction;
     if (pointInTriangle(v0, v1, v2, plane.normal, p)) {
+        float bigTriangleArea = glm::dot((v1 - v0), (v2 - v0))/2.0f;
+
+        //P = w*v0 + u*v1 + v*v2
+
+        float w = glm::abs(glm::dot((p - v1), (v2 - v1))) / 2.0f;
+        float u = glm::abs(glm::dot((p - v0), (v2 - v0))) / 2.0f;
+        float v = glm::abs(glm::dot((v0 - v1), (p - v1))) / 2.0f;
+
+
         return true;
     }
 
