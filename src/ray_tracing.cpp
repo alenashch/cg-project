@@ -79,11 +79,15 @@ bool intersectRayWithTriangle(const glm::vec3& v0, const glm::vec3& v1, const gl
 
         //P = w*v0 + u*v1 + v*v2
 
-        float w = glm::abs(glm::dot((p - v1), (v2 - v1))) / 2.0f;
-        float u = glm::abs(glm::dot((p - v0), (v2 - v0))) / 2.0f;
-        float v = glm::abs(glm::dot((v0 - v1), (p - v1))) / 2.0f;
+        float w = glm::length(glm::cross((p - v1), (v2 - v1))) / 2.0f;
+        float u = glm::length(glm::cross((p - v0), (v2 - v0))) / 2.0f;
+        float v = glm::length(glm::cross((v0 - v1), (p - v1))) / 2.0f;
 
+        glm::vec3 normalV0 = glm::cross(v2 - v0, v1 - v0);
+        glm::vec3 normalV1 = glm::cross(v0 - v1, v2 - v1);
+        glm::vec3 normalV2 = glm::cross(v0 - v2, v1 - v2);
 
+        hitInfo.normal = glm::normalize(normalV0 * w + normalV1 * u + normalV2 * v);
         return true;
     }
 
