@@ -2,6 +2,10 @@
 #include "draw.h"
 #include <queue>
 #include <limits>
+#include <glm/geometric.hpp>
+#include <glm/gtx/component_wise.hpp>
+#include <glm/vector_relational.hpp>
+
 
 
 BoundingVolumeHierarchy::BoundingVolumeHierarchy(Scene* pScene)
@@ -206,6 +210,51 @@ void BoundingVolumeHierarchy::debugDraw(int level)
     }
 }
 
+void normalInterpolation(const auto& v0, const auto& v1, const auto& v2, Ray& ray, HitInfo& hitInfo) 
+{
+    glm::vec3 p = ray.origin + ray.t * ray.direction;
+    float bigTriangleArea = glm::length(glm::cross((v1.position - v0.position), (v2.position - v0.position))) / 2.0f;
+
+    //P = w*v0 + u*v1 + v*v2
+    float w = (glm::length(glm::cross((p - v1.position), (v2.position - v1.position))) / 2.0f) / bigTriangleArea;
+    float u = (glm::length(glm::cross((p - v0.position), (v2.position - v0.position))) / 2.0f) / bigTriangleArea;
+    float v = (glm::length(glm::cross((v0.position - v1.position), (p - v1.position))) / 2.0f) / bigTriangleArea;
+
+    hitInfo.normal = glm::normalize(v0.normal * w + v1.normal * u + v2.normal * v);
+
+    // Normal for vector v0
+    Ray ray0;
+    ray0.origin = v0.position;
+    ray0.direction = v0.normal * w;
+    ray0.t = 3.0;
+    glm::vec3 colour0(1.0, 0.0, 0.0);
+    drawRay(ray0, colour0);
+
+    // Normal for vector v1
+    Ray ray1;
+    ray1.origin = v1.position;
+    ray1.direction = v1.normal * u;
+    ray1.t = 3.0;
+    glm::vec3 colour1(0.0, 1.0, 0.0);
+    drawRay(ray1, colour1);
+
+    // Normal for vector v2
+    Ray ray2;
+    ray2.origin = v2.position;
+    ray2.direction = v2.normal * v;
+    ray2.t = 3.0;
+    glm::vec3 colour2(0.0, 0.0, 1.0);
+    drawRay(ray2, colour2);
+
+    // Result
+    Ray result;
+    result.origin = p;
+    result.direction = hitInfo.normal;
+    result.t = 3.0;
+    glm::vec3 colour = w * colour0 + u * colour1 + v * colour2;
+    drawRay(result, colour);
+}
+
 
 // Return true if something is hit, returns false otherwise. Only find hits if they are closer than t stored
 // in the ray and if the intersection is on the correct side of the origin (the new t >= 0). Replace the code
@@ -221,6 +270,8 @@ bool BoundingVolumeHierarchy::intersect(Ray& ray, HitInfo& hitInfo) const
             const auto v1 = mesh.vertices[tri[1]];
             const auto v2 = mesh.vertices[tri[2]];
             if (intersectRayWithTriangle(v0.position, v1.position, v2.position, ray, hitInfo)) {
+                normalInterpolation(v0, v1, v2, ray, hitInfo);
+               
                 hitInfo.material = mesh.material;
                 hit = true;
             }
