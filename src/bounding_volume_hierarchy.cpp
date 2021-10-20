@@ -1,6 +1,7 @@
 #include "bounding_volume_hierarchy.h"
 #include "draw.h"
 #include <queue>
+#include <limits>
 
 
 BoundingVolumeHierarchy::BoundingVolumeHierarchy(Scene* pScene)
@@ -27,14 +28,14 @@ BoundingVolumeHierarchy::BoundingVolumeHierarchy(Scene* pScene)
             z_min = std::min(z_min, V2.z);
 
             float x_max = std::max(V0.x, V1.x);
-            x_min = std::max(x_max, V2.x);
+            x_max = std::max(x_max, V2.x);
             float y_max = std::max(V0.y, V1.y);
-            y_min = std::max(y_max, V2.y);
+            y_max = std::max(y_max, V2.y);
             float z_max = std::max(V0.z, V1.z);
-            z_min = std::max(z_max, V2.z);
+            z_max = std::max(z_max, V2.z);
 
             Triangle triangle;
-            triangle.center = { (V0.x + V1.x + V2.x) / 3, (V0.y + V1.y + V2.y) / 3, (V0.z + V1.z + V2.z) / 3 };
+            triangle.center = { (V0.x + V1.x + V2.x) / 3, (V0.y + V1.y + V2.y) / 3, (V0.z + V1.z + V2.z) / 3 };     
             triangle.min = { x_min, y_min, z_min };
             triangle.max = { x_max, y_max, z_max };
             triangles.push_back(triangle);
@@ -70,7 +71,6 @@ void BoundingVolumeHierarchy::levelCount(std::vector<Triangle> triangles, int le
 
     }
 }
-
 
 /*
 * Compare the coordinates of centroids of traingles (X,Y,Z)
@@ -126,7 +126,7 @@ AxisAlignedBox BoundingVolumeHierarchy::createAABB(std::vector<Triangle> triangl
             z_max = triangles[i].max[2];
     }
 
-    return AxisAlignedBox{ glm::vec3(x_min, y_min, z_min), glm::vec3(x_max, y_max, z_max) };
+    return { glm::vec3(x_min, y_min, z_min), glm::vec3(x_max, y_max, z_max) };
 }
 
 
@@ -200,8 +200,8 @@ void BoundingVolumeHierarchy::debugDraw(int level)
 {
     for (int i = 0; i < nodes.size(); i++) {
         if (nodes[i].level == level) {
-            drawAABB(nodes[i].aabb, DrawMode::Filled, glm::vec3(0.0f, 1.0f, 0.0f), 0.2f);
-            //drawAABB(nodes[i].aabb, DrawMode::Wireframe, glm::vec3(0.0f, 1.0f, 0.0f), 0.2f);
+            //drawAABB(nodes[i].aabb, DrawMode::Filled, glm::vec3(0.0f, 1.0f, 0.0f), 0.2f);
+            drawAABB(nodes[i].aabb, DrawMode::Wireframe, glm::vec3(0.0f, 1.0f, 0.0f), 0.2f);
         }
     }
 }
