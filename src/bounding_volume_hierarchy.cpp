@@ -1,5 +1,6 @@
 #include "bounding_volume_hierarchy.h"
 #include "draw.h"
+#include <queue>
 
 
 BoundingVolumeHierarchy::BoundingVolumeHierarchy(Scene* pScene)
@@ -33,7 +34,7 @@ BoundingVolumeHierarchy::BoundingVolumeHierarchy(Scene* pScene)
             z_min = std::max(z_max, V2.z);
 
             Triangle triangle;
-            triangle.centroid = { (V0.x + V1.x + V2.x) / 3, (V0.y + V1.y + V2.y) / 3, (V0.z + V1.z + V2.z) / 3 };
+            triangle.center = { (V0.x + V1.x + V2.x) / 3, (V0.y + V1.y + V2.y) / 3, (V0.z + V1.z + V2.z) / 3 };
             triangle.min = { x_min, y_min, z_min };
             triangle.max = { x_max, y_max, z_max };
             triangles.push_back(triangle);
@@ -43,9 +44,9 @@ BoundingVolumeHierarchy::BoundingVolumeHierarchy(Scene* pScene)
     // Count the levels
    countLevels(triangles, 0);
 
-    Node empty;
-    empty.level = -1;
-    nodes.resize(std::pow(2, levels) - 1, empty); 
+    Node n;
+    n.level = -1;
+    nodes.resize(std::pow(2, levels + 1) - 1, n); 
     constructBVHTree(triangles, 0, 0, 0);
 }
 
@@ -66,7 +67,6 @@ void BoundingVolumeHierarchy::countLevels(std::vector<Triangle> triangles, int l
         countLevels(childrenRight, level + 1);
 
     }
-
 }
 
 
@@ -75,17 +75,17 @@ void BoundingVolumeHierarchy::countLevels(std::vector<Triangle> triangles, int l
 */
 bool compareCentroidsX(Triangle t1, Triangle t2)
 {
-    return (t1.centroid.x < t2.centroid.x);
+    return (t1.center.x < t2.center.x);
 }
 
 bool compareCentroidsY(Triangle t1, Triangle t2)
 {
-    return (t1.centroid.y < t2.centroid.y);
+    return (t1.center.y < t2.center.y);
 }
 
 bool compareCentroidsZ(Triangle t1, Triangle t2)
 {
-    return (t1.centroid.z < t2.centroid.z);
+    return (t1.center.z < t2.center.z);
 }
 
 
@@ -128,6 +128,9 @@ AxisAlignedBox BoundingVolumeHierarchy::createAABB(std::vector<Triangle> triangl
 }
 
 
+/*
+* Constructs the BVH Tree
+*/
 void BoundingVolumeHierarchy::constructBVHTree(std::vector<Triangle> triangles, int index, int level, int axis) {
 
     if (triangles.size() == 1 || level == MAX_LEVEL) {
@@ -138,7 +141,6 @@ void BoundingVolumeHierarchy::constructBVHTree(std::vector<Triangle> triangles, 
         node.isLeaf = true;
         node.aabb = createAABB(triangles);
         node.triangles = triangles;
-        //nodes.push_back(node);
         nodes[index] = node;
     }
     else {
@@ -147,7 +149,6 @@ void BoundingVolumeHierarchy::constructBVHTree(std::vector<Triangle> triangles, 
         node.index = index;
         node.level = level;
         node.aabb = createAABB(triangles);
-        //nodes.push_back(node);
         nodes[index] = node;
 
         if (axis == 0)
@@ -157,6 +158,7 @@ void BoundingVolumeHierarchy::constructBVHTree(std::vector<Triangle> triangles, 
         if (axis == 2)
             sort(triangles.begin(), triangles.end(), compareCentroidsZ);
 
+        // Change the next axis of division
         int nextAxis = 0;
         if (axis == 0)
             nextAxis = 1;
@@ -165,7 +167,7 @@ void BoundingVolumeHierarchy::constructBVHTree(std::vector<Triangle> triangles, 
         if (axis == 2)
             nextAxis = 0;
 
-
+        // Median division
         std::vector<Triangle> childrenLeft = std::vector<Triangle>(triangles.begin(), triangles.begin() + triangles.size() / 2);
         std::vector<Triangle> childrenRight = std::vector<Triangle>(triangles.begin() + triangles.size() / 2, triangles.end());
 
@@ -186,7 +188,6 @@ void BoundingVolumeHierarchy::constructBVHTree(std::vector<Triangle> triangles, 
 int BoundingVolumeHierarchy::numLevels()
 {
     return levels;
-
 }
 
 // Use this function to visualize your BVH. This can be useful for debugging. Use the functions in
@@ -194,20 +195,12 @@ int BoundingVolumeHierarchy::numLevels()
 // mode, arbitrary colors and transparency.
 void BoundingVolumeHierarchy::debugDraw(int level)
 {
-    for (Node node : nodes) {
-        if (node.level == level) {
-            drawAABB(node.aabb, DrawMode::Filled, glm::vec3(0.0f, 1.0f, 0.0f), 0.2f);
+    for (int i = 0; i < nodes.size(); i++) {
+        if (nodes[i].level == level) {
+            drawAABB(nodes[i].aabb, DrawMode::Filled, glm::vec3(0.0f, 1.0f, 0.0f), 0.2f);
+            //drawAABB(nodes[i].aabb, DrawMode::Wireframe, glm::vec3(0.0f, 1.0f, 0.0f), 0.2f);
         }
     }
-
-    // Draw the AABB as a transparent green box.
-    //AxisAlignedBox aabb{ glm::vec3(-0.05f), glm::vec3(0.05f, 1.05f, 1.05f) };
-    //drawAABB(aabb, DrawMode::Filled, glm::vec3(0.0f, 1.0f, 0.0f), 0.2f);
-
-    // Draw the AABB as a (white) wireframe box.
-    //AxisAlignedBox aabb { glm::vec3(0.0f), glm::vec3(0.0f, 1.05f, 1.05f) };
-    //drawAABB(aabb, DrawMode::Wireframe);
-    //drawAABB(aabb, DrawMode::Filled, glm::vec3(0.05f, 1.0f, 0.05f), 0.1f);
 }
 
 
