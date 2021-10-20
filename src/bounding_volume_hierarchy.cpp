@@ -222,6 +222,9 @@ void normalInterpolation(const auto& v0, const auto& v1, const auto& v2, Ray& ra
 
     hitInfo.normal = glm::normalize(v0.normal * w + v1.normal * u + v2.normal * v);
 
+    /*
+    * THIS CODE IS FOR DEBUG 
+    * 
     // Normal for vector v0
     Ray ray0;
     ray0.origin = v0.position;
@@ -253,6 +256,8 @@ void normalInterpolation(const auto& v0, const auto& v1, const auto& v2, Ray& ra
     result.t = 3.0;
     glm::vec3 colour = w * colour0 + u * colour1 + v * colour2;
     drawRay(result, colour);
+
+    */
 }
 
 
