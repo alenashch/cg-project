@@ -42,29 +42,31 @@ BoundingVolumeHierarchy::BoundingVolumeHierarchy(Scene* pScene)
 
     }
     // Count the levels
-   countLevels(triangles, 0);
+    levelCount(triangles, 0);
 
     Node n;
     n.level = -1;
-    nodes.resize(std::pow(2, levels + 1) - 1, n); 
+    nodes.resize(std::pow(2, numberOfLevels + 1) - 1, n);
     constructBVHTree(triangles, 0, 0, 0);
 }
 
 /*
 * Counts the levels of the BoundingVolumeHierarchy
 */
-void BoundingVolumeHierarchy::countLevels(std::vector<Triangle> triangles, int level)
+void BoundingVolumeHierarchy::levelCount(std::vector<Triangle> triangles, int level)
 {
-    if (levels < level + 1) {
-        levels = level + 1;
+    if (numberOfLevels < level + 1) {
+        numberOfLevels = level + 1;
     }
     if (triangles.size() != 1 && level != MAX_LEVEL) {
 
         std::vector<Triangle> childrenLeft(triangles.begin(), triangles.begin() + triangles.size() / 2);
         std::vector<Triangle> childrenRight(triangles.begin() + triangles.size() / 2, triangles.end());
 
-        countLevels(childrenLeft, level + 1);
-        countLevels(childrenRight, level + 1);
+        if(childrenLeft.size() > childrenRight.size())
+            levelCount(childrenLeft, level + 1);
+        else
+            levelCount(childrenRight, level + 1);
 
     }
 }
@@ -151,6 +153,7 @@ void BoundingVolumeHierarchy::constructBVHTree(std::vector<Triangle> triangles, 
         node.aabb = createAABB(triangles);
         nodes[index] = node;
 
+        // Sort triangles based on the axis
         if (axis == 0)
             sort(triangles.begin(), triangles.end(), compareCentroidsX);
         if (axis == 1)
@@ -187,7 +190,7 @@ void BoundingVolumeHierarchy::constructBVHTree(std::vector<Triangle> triangles, 
 // slider in the UI how many steps it should display.
 int BoundingVolumeHierarchy::numLevels()
 {
-    return levels;
+    return numberOfLevels;
 }
 
 // Use this function to visualize your BVH. This can be useful for debugging. Use the functions in
