@@ -2,6 +2,7 @@
 #include "draw.h"
 #include "ray_tracing.h"
 #include "screen.h"
+//#include "lighting.h"
 // Suppress warnings in third-party code.
 #include <framework/disable_all_warnings.h>
 DISABLE_WARNINGS_PUSH()
@@ -40,14 +41,13 @@ enum class ViewMode {
 };
 
 
-static glm::vec3 getFinalColor(const Scene& scene, const BoundingVolumeHierarchy& bvh, Ray ray)
+static glm::vec3 getFinalColor(const Scene& scene, BoundingVolumeHierarchy& bvh, Ray ray)
 {
     HitInfo hitInfo;
     if (bvh.intersect(ray, hitInfo)) {
         // Draw a white debug ray if the ray hits.
         drawRay(ray, glm::vec3(1.0f));
-        // Set the color of the pixel to white if the ray hits.
-        return glm::vec3(1.0f);
+        return lightRay(ray, hitInfo, scene, bvh);
     } else {
         // Draw a red debug ray if the ray missed.
         drawRay(ray, glm::vec3(1.0f, 0.0f, 0.0f));
@@ -91,7 +91,7 @@ static void drawLightsOpenGL(const Scene& scene, const Trackball& camera, int se
 static void drawSceneOpenGL(const Scene& scene);
 
 // This is the main rendering function. You are free to change this function in any way (including the function signature).
-static void renderRayTracing(const Scene& scene, const Trackball& camera, const BoundingVolumeHierarchy& bvh, Screen& screen)
+static void renderRayTracing(const Scene& scene, const Trackball& camera, BoundingVolumeHierarchy& bvh, Screen& screen)
 {
 #ifndef NDEBUG
     // Single threaded in debug mode
