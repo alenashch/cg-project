@@ -35,7 +35,6 @@ public:
 
     void constructBVHTree(std::vector<Triangle> triangles, int index, int level, int axis);
     
-
     // Implement these two functions for the Visual Debug.
     // The first function should return how many levels there are in the tree that you have constructed.
     // The second function should draw the bounding boxes of the nodes at the selected level.
