@@ -6,7 +6,7 @@
 
 struct Triangle
 {
-    glm::vec3 centroid;
+    glm::vec3 center;
     glm::vec3 min;
     glm::vec3 max;
 
@@ -24,14 +24,12 @@ class BoundingVolumeHierarchy {
 
 public:
     int MAX_LEVEL = 20;
-    int levels = 0.0;
+    int numberOfLevels = 0.0;
     std::vector<Node> nodes;
 
     BoundingVolumeHierarchy(Scene* pScene);
 
-    void countLevels(std::vector<Triangle> triangles, int level);
-    //void countLevels(std::vector<Node> nodes, int level);
-
+    void levelCount(std::vector<Triangle> triangles, int level);
 
     AxisAlignedBox createAABB(std::vector<Triangle> triangles);
 
