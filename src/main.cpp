@@ -39,8 +39,8 @@ enum class ViewMode {
     RayTracing = 1
 };
 
-static // Standard lambertian shading: Kd * dot(N,L), clamped to zero when negative. Where L is the light vector.
-glm::vec3 diffuseOnly(HitInfo hitInfo, glm::vec3& vertexPos, glm::vec3& normal, PointLight light)
+ // Standard lambertian shading: Kd * dot(N,L), clamped to zero when negative. Where L is the light vector.
+static glm::vec3 diffuseOnly(HitInfo hitInfo, glm::vec3& vertexPos, glm::vec3& normal, PointLight light)
 {
 
     glm::vec3 lightVec = light.position - vertexPos;
@@ -52,7 +52,7 @@ glm::vec3 diffuseOnly(HitInfo hitInfo, glm::vec3& vertexPos, glm::vec3& normal, 
 }
 
 
-glm::vec3 phongSpecularOnly(HitInfo hitInfo, glm::vec3& vertexPos, glm::vec3& normal, PointLight light, glm::vec3& cameraPos)
+static glm::vec3 phongSpecularOnly(HitInfo hitInfo, glm::vec3& vertexPos, glm::vec3& normal, PointLight light, glm::vec3& cameraPos)
 {
     glm::vec3 viewVector = cameraPos - vertexPos;
     viewVector = glm::normalize(viewVector);
@@ -66,6 +66,7 @@ glm::vec3 phongSpecularOnly(HitInfo hitInfo, glm::vec3& vertexPos, glm::vec3& no
         return glm::vec3{ hitInfo.material.ks * glm::pow(glm::dot(viewVector, reflectionV), std::round( hitInfo.material.shininess)) };
     }
 }
+
 
 static glm::vec3 getFinalColor(const Scene& scene, const BoundingVolumeHierarchy& bvh, Ray ray)
 {
@@ -87,9 +88,24 @@ static glm::vec3 getFinalColor(const Scene& scene, const BoundingVolumeHierarchy
 
             }
         }
+
+        if (!((hitInfo.material.ks.x == 0) && (hitInfo.material.ks.y == 0) && (hitInfo.material.ks.z == 0))) //if ks is not black
+        {
+            glm::vec3 reflectedVec =2 * glm::dot(ray.origin + ray.t * ray.direction, hitInfo.normal) * hitInfo.normal - (ray.origin + ray.t * ray.direction) ;
+            Ray reflectedRay;
+            reflectedRay.origin = ray.origin + ray.t * ray.direction;
+            reflectedRay.direction = reflectedVec;
+           
+            
+
+           color += getFinalColor(scene, bvh, reflectedRay);   //if reflected ray doesnt hit , then return color 
+
+
+
+        } 
     } 
     // Draw a color debug ray if the ray hits, else black
-    drawRay(ray, color);
+    //drawRay(ray, color);
     // Set the color of the pixel to color calculated if the ray hits,else black
     return color;
     
