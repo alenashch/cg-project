@@ -39,21 +39,87 @@ enum class ViewMode {
     RayTracing = 1
 };
 
+ // Standard lambertian shading: Kd * dot(N,L), clamped to zero when negative. Where L is the light vector.
+static glm::vec3 diffuseOnly(HitInfo hitInfo, glm::vec3& vertexPos, glm::vec3& normal, PointLight light)
+{
+
+    glm::vec3 lightVec = light.position - vertexPos;
+    glm::vec3 lambertian = light.color* hitInfo.material.kd * glm::dot(normal, glm::normalize(lightVec));
+
+    if (glm::dot(normal, glm::normalize(lightVec)) < -10e-3f) return glm::vec3(0.0f);
+        
+    return lambertian;
+}
+
+
+static glm::vec3 phongSpecularOnly(HitInfo hitInfo, glm::vec3& vertexPos, glm::vec3& normal, PointLight light, glm::vec3& cameraPos)
+{
+    glm::vec3 viewVector = cameraPos - vertexPos;
+    viewVector = glm::normalize(viewVector);
+    glm::vec3 lightVec = light.position - vertexPos;
+    lightVec = glm::normalize(lightVec);
+    glm::vec3 reflectionV = 2 * glm::dot(lightVec, normal) * normal - lightVec;
+    if (glm::dot(lightVec, normal) < -10e-3f) {
+        return glm::vec3(0, 0, 0);
+    }
+    else {
+        return glm::vec3{ hitInfo.material.ks * glm::pow(glm::dot(viewVector, reflectionV), std::round( hitInfo.material.shininess)) };
+    }
+}
+
 
 static glm::vec3 getFinalColor(const Scene& scene, const BoundingVolumeHierarchy& bvh, Ray ray)
 {
     HitInfo hitInfo;
+    
+
+    glm::vec3 color = glm::vec3(0.0f);
+
     if (bvh.intersect(ray, hitInfo)) {
-        // Draw a white debug ray if the ray hits.
-        drawRay(ray, glm::vec3(1.0f));
-        // Set the color of the pixel to white if the ray hits.
-        return glm::vec3(1.0f);
-    } else {
+ 
+        glm::vec3 point = ray.origin + ray.t * ray.direction;
+        for (const auto& light : scene.lights) {
+            if (std::holds_alternative<PointLight>(light)) {
+                PointLight pointLight = std::get<PointLight>(light);
+                glm::vec3 diffuseTerm = diffuseOnly(hitInfo, point, hitInfo.normal, pointLight);
+                glm::vec3 specularTerm = phongSpecularOnly(hitInfo, point, hitInfo.normal, pointLight, ray.origin);
+
+                color = color + diffuseTerm + specularTerm;
+
+            }
+        }
+
+        if (!((hitInfo.material.ks.x == 0) && (hitInfo.material.ks.y == 0) && (hitInfo.material.ks.z == 0))) //if ks is not black
+        {
+            glm::vec3 reflectedVec =2 * glm::dot(ray.origin + ray.t * ray.direction, hitInfo.normal) * hitInfo.normal - (ray.origin + ray.t * ray.direction) ;
+            Ray reflectedRay;
+            reflectedRay.origin = ray.origin + ray.t * ray.direction;
+            reflectedRay.direction = reflectedVec;
+           
+            
+
+           color += getFinalColor(scene, bvh, reflectedRay);   //if reflected ray doesnt hit , then return color 
+
+
+
+        } 
+    } 
+    // Draw a color debug ray if the ray hits, else black
+    //drawRay(ray, color);
+    // Set the color of the pixel to color calculated if the ray hits,else black
+    return color;
+    
+    
+    //else {
         // Draw a red debug ray if the ray missed.
-        drawRay(ray, glm::vec3(1.0f, 0.0f, 0.0f));
+      //  drawRay(ray, glm::vec3(1.0f, 0.0f, 0.0f));
         // Set the color of the pixel to black if the ray misses.
-        return glm::vec3(0.0f);
-    }
+        //return glm::vec3(0.0f);
+   // }
+
+    
+
+   
 
     // Lights are stored in a single array (scene.lights) where each item can be either a PointLight, SegmentLight or ParallelogramLight.
     // You can check whether a light at index i is a PointLight using std::holds_alternative:
