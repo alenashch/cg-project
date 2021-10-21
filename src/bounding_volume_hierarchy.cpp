@@ -1,6 +1,11 @@
 #include "bounding_volume_hierarchy.h"
 #include "draw.h"
 #include <queue>
+#include <limits>
+#include <glm/geometric.hpp>
+#include <glm/gtx/component_wise.hpp>
+#include <glm/vector_relational.hpp>
+
 
 
 BoundingVolumeHierarchy::BoundingVolumeHierarchy(Scene* pScene)
@@ -27,14 +32,14 @@ BoundingVolumeHierarchy::BoundingVolumeHierarchy(Scene* pScene)
             z_min = std::min(z_min, V2.z);
 
             float x_max = std::max(V0.x, V1.x);
-            x_min = std::max(x_max, V2.x);
+            x_max = std::max(x_max, V2.x);
             float y_max = std::max(V0.y, V1.y);
-            y_min = std::max(y_max, V2.y);
+            y_max = std::max(y_max, V2.y);
             float z_max = std::max(V0.z, V1.z);
-            z_min = std::max(z_max, V2.z);
+            z_max = std::max(z_max, V2.z);
 
             Triangle triangle;
-            triangle.center = { (V0.x + V1.x + V2.x) / 3, (V0.y + V1.y + V2.y) / 3, (V0.z + V1.z + V2.z) / 3 };
+            triangle.center = { (V0.x + V1.x + V2.x) / 3, (V0.y + V1.y + V2.y) / 3, (V0.z + V1.z + V2.z) / 3 };     
             triangle.min = { x_min, y_min, z_min };
             triangle.max = { x_max, y_max, z_max };
             triangles.push_back(triangle);
@@ -70,7 +75,6 @@ void BoundingVolumeHierarchy::levelCount(std::vector<Triangle> triangles, int le
 
     }
 }
-
 
 /*
 * Compare the coordinates of centroids of traingles (X,Y,Z)
@@ -126,7 +130,7 @@ AxisAlignedBox BoundingVolumeHierarchy::createAABB(std::vector<Triangle> triangl
             z_max = triangles[i].max[2];
     }
 
-    return AxisAlignedBox{ glm::vec3(x_min, y_min, z_min), glm::vec3(x_max, y_max, z_max) };
+    return { glm::vec3(x_min, y_min, z_min), glm::vec3(x_max, y_max, z_max) };
 }
 
 
@@ -200,10 +204,60 @@ void BoundingVolumeHierarchy::debugDraw(int level)
 {
     for (int i = 0; i < nodes.size(); i++) {
         if (nodes[i].level == level) {
-            drawAABB(nodes[i].aabb, DrawMode::Filled, glm::vec3(0.0f, 1.0f, 0.0f), 0.2f);
-            //drawAABB(nodes[i].aabb, DrawMode::Wireframe, glm::vec3(0.0f, 1.0f, 0.0f), 0.2f);
+            //drawAABB(nodes[i].aabb, DrawMode::Filled, glm::vec3(0.0f, 1.0f, 0.0f), 0.2f);
+            drawAABB(nodes[i].aabb, DrawMode::Wireframe, glm::vec3(0.0f, 1.0f, 0.0f), 0.2f);
         }
     }
+}
+
+void normalInterpolation(const auto& v0, const auto& v1, const auto& v2, Ray& ray, HitInfo& hitInfo) 
+{
+    glm::vec3 p = ray.origin + ray.t * ray.direction;
+    float bigTriangleArea = glm::length(glm::cross((v1.position - v0.position), (v2.position - v0.position))) / 2.0f;
+
+    //P = w*v0 + u*v1 + v*v2
+    float w = (glm::length(glm::cross((p - v1.position), (v2.position - v1.position))) / 2.0f) / bigTriangleArea;
+    float u = (glm::length(glm::cross((p - v0.position), (v2.position - v0.position))) / 2.0f) / bigTriangleArea;
+    float v = (glm::length(glm::cross((v0.position - v1.position), (p - v1.position))) / 2.0f) / bigTriangleArea;
+
+    hitInfo.normal = glm::normalize(v0.normal * w + v1.normal * u + v2.normal * v);
+
+    /*
+    * THIS CODE IS FOR DEBUG 
+    * 
+    // Normal for vector v0
+    Ray ray0;
+    ray0.origin = v0.position;
+    ray0.direction = v0.normal * w;
+    ray0.t = 3.0;
+    glm::vec3 colour0(1.0, 0.0, 0.0);
+    drawRay(ray0, colour0);
+
+    // Normal for vector v1
+    Ray ray1;
+    ray1.origin = v1.position;
+    ray1.direction = v1.normal * u;
+    ray1.t = 3.0;
+    glm::vec3 colour1(0.0, 1.0, 0.0);
+    drawRay(ray1, colour1);
+
+    // Normal for vector v2
+    Ray ray2;
+    ray2.origin = v2.position;
+    ray2.direction = v2.normal * v;
+    ray2.t = 3.0;
+    glm::vec3 colour2(0.0, 0.0, 1.0);
+    drawRay(ray2, colour2);
+
+    // Result
+    Ray result;
+    result.origin = p;
+    result.direction = hitInfo.normal;
+    result.t = 3.0;
+    glm::vec3 colour = w * colour0 + u * colour1 + v * colour2;
+    drawRay(result, colour);
+
+    */
 }
 
 
@@ -221,6 +275,8 @@ bool BoundingVolumeHierarchy::intersect(Ray& ray, HitInfo& hitInfo) const
             const auto v1 = mesh.vertices[tri[1]];
             const auto v2 = mesh.vertices[tri[2]];
             if (intersectRayWithTriangle(v0.position, v1.position, v2.position, ray, hitInfo)) {
+                normalInterpolation(v0, v1, v2, ray, hitInfo);
+               
                 hitInfo.material = mesh.material;
                 hit = true;
             }
