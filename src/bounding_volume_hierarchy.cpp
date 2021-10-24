@@ -210,7 +210,7 @@ void BoundingVolumeHierarchy::debugDraw(int level)
     }
 }
 
-void normalInterpolation(const auto& v0, const auto& v1, const auto& v2, Ray& ray, HitInfo& hitInfo) 
+glm::vec3 normalInterpolation(const auto& v0, const auto& v1, const auto& v2, Ray& ray, HitInfo& hitInfo) 
 {
     glm::vec3 p = ray.origin + ray.t * ray.direction;
     float bigTriangleArea = glm::length(glm::cross((v1.position - v0.position), (v2.position - v0.position))) / 2.0f;
@@ -221,6 +221,7 @@ void normalInterpolation(const auto& v0, const auto& v1, const auto& v2, Ray& ra
     float v = (glm::length(glm::cross((v0.position - v1.position), (p - v1.position))) / 2.0f) / bigTriangleArea;
 
     hitInfo.normal = glm::normalize(v0.normal * w + v1.normal * u + v2.normal * v);
+    return glm::vec3{ w,u,v };
 
     /*
     * THIS CODE IS FOR DEBUG 
@@ -260,6 +261,25 @@ void normalInterpolation(const auto& v0, const auto& v1, const auto& v2, Ray& ra
     */
 }
 
+void textureMapping(const auto& v0, const auto& v1, const auto& v2, Ray& ray, HitInfo& hitInfo) {
+
+    glm::vec3 bayCoord = normalInterpolation(v0, v1, v2, ray, hitInfo);
+
+    glm::vec2 textureCoord = glm::normalize(v0.texCoord * bayCoord.x + v1.texCoord * bayCoord.y + v2.texCoord * bayCoord.z);
+
+
+    //texture lookup
+    std::optional <Image> textureImage = hitInfo.material.kdTexture;
+    if (textureImage.has_value()) {
+        
+        hitInfo.texel = textureImage.value().getTexel(textureCoord);
+    }
+
+    //Visual debug
+
+    
+}
+
 
 // Return true if something is hit, returns false otherwise. Only find hits if they are closer than t stored
 // in the ray and if the intersection is on the correct side of the origin (the new t >= 0). Replace the code
@@ -275,9 +295,10 @@ bool BoundingVolumeHierarchy::intersect(Ray& ray, HitInfo& hitInfo) const
             const auto v1 = mesh.vertices[tri[1]];
             const auto v2 = mesh.vertices[tri[2]];
             if (intersectRayWithTriangle(v0.position, v1.position, v2.position, ray, hitInfo)) {
-                normalInterpolation(v0, v1, v2, ray, hitInfo);
+               glm::vec3 bayCoord = normalInterpolation(v0, v1, v2, ray, hitInfo);
                
                 hitInfo.material = mesh.material;
+                textureMapping(v0, v1, v2, ray, hitInfo);
                 hit = true;
             }
         }

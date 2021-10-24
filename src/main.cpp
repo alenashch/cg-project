@@ -89,21 +89,26 @@ static glm::vec3 getFinalColor(const Scene& scene, const BoundingVolumeHierarchy
             }
         }
 
-        if (!((hitInfo.material.ks.x == 0) && (hitInfo.material.ks.y == 0) && (hitInfo.material.ks.z == 0))) //if ks is not black
+        if (!(hitInfo.material.ks == glm::vec3(0))) //if ks is not black
+
         {
-            glm::vec3 reflectedVec =2 * glm::dot(ray.origin + ray.t * ray.direction, hitInfo.normal) * hitInfo.normal - (ray.origin + ray.t * ray.direction) ;
+            glm::vec3 LVector = glm::normalize(ray.origin - point);
+            glm::vec3 reflectedVec = 2 * glm::dot(LVector, hitInfo.normal) * hitInfo.normal - (ray.origin + ray.t * ray.direction) ;
             Ray reflectedRay;
             reflectedRay.origin = ray.origin + ray.t * ray.direction;
             reflectedRay.direction = reflectedVec;
-           
+           // reflectedRay.t = ray.t;
+            
             
 
            color += getFinalColor(scene, bvh, reflectedRay);   //if reflected ray doesnt hit , then return color 
 
-
+           //how will the recursion stop if it keeps intersecting (when the ray shoots from inside the mirror)
 
         } 
     } 
+
+    color += hitInfo.texel;
     // Draw a color debug ray if the ray hits, else black
     //drawRay(ray, color);
     // Set the color of the pixel to color calculated if the ray hits,else black
