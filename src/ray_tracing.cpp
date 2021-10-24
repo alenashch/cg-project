@@ -70,12 +70,13 @@ bool intersectRayWithTriangle(const glm::vec3& v0, const glm::vec3& v1, const gl
     Plane plane = trianglePlane(v0, v1, v2);
     float curr_t = ray.t;
     if (intersectRayWithPlane(plane, ray) == false) {
+
         return false;
     }
 
     glm::vec3 p = ray.origin + ray.t * ray.direction;
     if (pointInTriangle(v0, v1, v2, plane.normal, p)) {
-        float bigTriangleArea = glm::dot((v1 - v0), (v2 - v0))/2.0f;
+        float bigTriangleArea = glm::dot((v1 - v0), (v2 - v0)) / 2.0f;
 
         //P = w*v0 + u*v1 + v*v2
 
@@ -87,7 +88,7 @@ bool intersectRayWithTriangle(const glm::vec3& v0, const glm::vec3& v1, const gl
         glm::vec3 normalV1 = glm::cross(v0 - v1, v2 - v1);
         glm::vec3 normalV2 = glm::cross(v0 - v2, v1 - v2);
 
-        hitInfo.normal = glm::normalize(normalV0 * w + normalV1 * u + normalV2 * v);
+        hitInfo.normal = glm::normalize(plane.normal);
         return true;
     }
 
@@ -121,6 +122,7 @@ bool intersectRayWithShape(const Sphere& sphere, Ray& ray, HitInfo& hitInfo)
                 return false;
 
             ray.t = t_0;
+            hitInfo.normal = glm::normalize((ray.origin + ray.t * ray.direction) - sphere.center);
             return true;
         }
         return false;
@@ -136,6 +138,7 @@ bool intersectRayWithShape(const Sphere& sphere, Ray& ray, HitInfo& hitInfo)
             return false;
 
         ray.t = t_0;
+        hitInfo.normal = glm::normalize((ray.origin + ray.t * ray.direction) - sphere.center);
         return true;
     }
 
@@ -145,6 +148,7 @@ bool intersectRayWithShape(const Sphere& sphere, Ray& ray, HitInfo& hitInfo)
             return false;
 
         ray.t = t_1;
+        hitInfo.normal = glm::normalize((ray.origin + ray.t * ray.direction) - sphere.center);
         return true;
     }
 
@@ -154,6 +158,7 @@ bool intersectRayWithShape(const Sphere& sphere, Ray& ray, HitInfo& hitInfo)
             return false;
 
         ray.t = t_1;
+        hitInfo.normal = glm::normalize((ray.origin + ray.t * ray.direction) - sphere.center);
         return true;
     }
 
@@ -162,6 +167,7 @@ bool intersectRayWithShape(const Sphere& sphere, Ray& ray, HitInfo& hitInfo)
             return false;
 
         ray.t = t_0;
+        hitInfo.normal = glm::normalize((ray.origin + ray.t * ray.direction) - sphere.center);
         return true;
     }
 

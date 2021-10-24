@@ -20,17 +20,19 @@ DISABLE_WARNINGS_POP()
 #include <cstdlib>
 #include <filesystem>
 #include <framework/image.h>
-#include <framework/imguizmo.h>
+#include <framework/imguizmo.h> 
 #include <framework/trackball.h>
 #include <framework/variant_helper.h>
 #include <framework/window.h>
 #include <fstream>
 #include <iostream>
-#include <optional>
+#include <optional> 
 #include <random>
 #include <string>
 #include <type_traits>
 #include <variant>
+#include "lighting.h"
+
 
 constexpr glm::ivec2 windowResolution { 800, 800 };
 const std::filesystem::path dataPath { DATA_DIR };
@@ -41,6 +43,37 @@ enum class ViewMode {
 };
 
 
+//static glm::vec3 getFinalColor(const Scene& scene, const BoundingVolumeHierarchy& bvh, Ray ray)
+//{
+//    HitInfo hitInfo;
+//
+//
+//    glm::vec3 color = glm::vec3(0.0f);
+//
+//    if (bvh.intersect(ray, hitInfo)) {
+//        // Draw a white debug ray if the ray hits.
+//        drawRay(ray, glm::vec3(1.0f));
+//        // Set the color of the pixel to white if the ray hits.
+//        //return glm::vec3(1.0f);
+//        glm::vec3 point = ray.origin + ray.t * ray.direction;
+//        for (const auto& light : scene.lights) {
+//            if (std::holds_alternative<PointLight>(light)) {
+//                PointLight pointLight = std::get<PointLight>(light);
+//                glm::vec3 diffuseTerm = diffuseOnly(hitInfo, point, pointLight.position);
+//                glm::vec3 specularTerm = phongSpecularOnly(hitInfo, point, pointLight.position, ray.origin);
+//                color = color + diffuseTerm + specularTerm;
+//
+//            }
+//        }
+//    }
+//
+//    return color;
+//}
+
+
+
+
+
 static glm::vec3 getFinalColor(const Scene& scene, BoundingVolumeHierarchy& bvh, Ray ray)
 {
     HitInfo hitInfo;
@@ -48,6 +81,7 @@ static glm::vec3 getFinalColor(const Scene& scene, BoundingVolumeHierarchy& bvh,
         // Draw a white debug ray if the ray hits.
         drawRay(ray, glm::vec3(1.0f));
         return lightRay(ray, hitInfo, scene, bvh);
+        //return recursiveRayTrace(ray, hitInfo, scene, bvh, 0);
     } else {
         // Draw a red debug ray if the ray missed.
         drawRay(ray, glm::vec3(1.0f, 0.0f, 0.0f));
@@ -125,6 +159,27 @@ static void renderRayTracing(const Scene& scene, const Trackball& camera, Boundi
 #endif
 }
 
+//debug purposes
+//int main() {
+//    glm::vec3 ep0 = { 0,0,0 }; 
+//    glm::vec3 ep1 = { 2,0,0 };
+//    glm::vec3 ep2 = { 0,2,0 }; 
+//    ParallelogramLight test; 
+//    test.v0 = ep0; 
+//    test.edge01 = ep1; 
+//    test.edge02 = ep2; 
+//    test.color0 = { 256, 0, 0 };
+//    test.color1 = { 0, 256, 0 };
+//    test.color2 = { 0, 0, 256 };
+//    test.color3 = { 0, 125, 0 };
+//
+//    std::vector x = randomPointsOnParallelogram(test, 7);
+//    for (glm::vec3 y : x) {
+//        std::cout << y.y << + "  ";
+//    }
+//
+//    return 0;
+//}
 int main(int argc, char** argv)
 {
     Trackball::printHelp();
@@ -414,7 +469,7 @@ static void drawLightsOpenGL(const Scene& scene, const Trackball& camera, int se
                 [](const ParallelogramLight& light) {
                     glPushAttrib(GL_ALL_ATTRIB_BITS);
                     glBegin(GL_QUADS);
-                    glColor3fv(glm::value_ptr(light.color0));
+                     (glm::value_ptr(light.color0));
                     glVertex3fv(glm::value_ptr(light.v0));
                     glColor3fv(glm::value_ptr(light.color1));
                     glVertex3fv(glm::value_ptr(light.v0 + light.edge01));
