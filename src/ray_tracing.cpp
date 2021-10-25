@@ -12,7 +12,30 @@ DISABLE_WARNINGS_POP()
 
 bool pointInTriangle(const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& n, const glm::vec3& p)
 {
-    float A, a1, a2, a3;
+
+
+    glm::vec3 crossv0 = glm::cross((v2 - v1), (p - v1));
+    glm::vec3 crossv1 = glm::cross((v0 - v2), (p - v2));
+    glm::vec3 crossv2 = glm::cross((v1 - v0), (p - v0));
+
+
+    float alpha = glm::dot(crossv0, n) / glm::dot(n, n);
+    float beta = glm::dot(crossv1, n) / glm::dot(n, n);
+    float gamma = glm::dot(crossv2, n) / glm::dot(n, n);
+
+
+    if (alpha < 0)
+        return false;
+    if (beta < 0)
+        return false;
+    if (gamma < 0)
+        return false;
+
+
+
+
+    return true;
+    /*float A, a1, a2, a3;
     float a, b, c;
     A = glm::length(glm::cross(v1 - v0, v2 - v0)) / 2.0f;
     a1 = glm::length(glm::cross(v2 - v1, p - v1)) / 2.0f;
@@ -31,6 +54,7 @@ bool pointInTriangle(const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& 
         return true;
 
     return false;
+    */
 }
 
 bool intersectRayWithPlane(const Plane& plane, Ray& ray)
