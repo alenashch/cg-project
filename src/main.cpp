@@ -95,7 +95,7 @@ static glm::vec3 getFinalColor(const Scene& scene, const BoundingVolumeHierarchy
             glm::vec3 LVector = glm::normalize(ray.origin - point);
             glm::vec3 reflectedVec = 2 * glm::dot(LVector, hitInfo.normal) * hitInfo.normal - (ray.origin + ray.t * ray.direction) ;
             Ray reflectedRay;
-            reflectedRay.origin = ray.origin + ray.t * ray.direction;
+            reflectedRay.origin = ray.origin + (ray.t - (10e-5f) )* ray.direction;
             reflectedRay.direction = reflectedVec;
            // reflectedRay.t = ray.t;
             
