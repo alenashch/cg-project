@@ -106,26 +106,15 @@ static glm::vec3 getFinalColor(const Scene& scene, const BoundingVolumeHierarchy
           
 
         } 
+        
     } 
 
     color += hitInfo.texel;
-    // Draw a color debug ray if the ray hits, else black
-    //drawRay(ray, color);
-    // Set the color of the pixel to color calculated if the ray hits,else black
+   
     drawRay(ray, color);
-    //drawRay(reflectedRay, color);
-
+    
     return color;
-    
-    
-    //else {
-        // Draw a red debug ray if the ray missed.
-      //  drawRay(ray, glm::vec3(1.0f, 0.0f, 0.0f));
-        // Set the color of the pixel to black if the ray misses.
-        //return glm::vec3(0.0f);
-   // }
-
-    
+  
 
    
 

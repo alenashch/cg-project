@@ -4,6 +4,7 @@
 #include "draw.h"
 #include <queue>
 #include <limits>
+#include <iostream>
 DISABLE_WARNINGS_PUSH()
 #include <glm/geometric.hpp>
 #include <glm/gtx/component_wise.hpp>
@@ -234,7 +235,7 @@ glm::vec3 normalInterpolation(const auto& v0, const auto& v1, const auto& v2, Ra
     float u = (glm::length(glm::cross((p - v0.position), (v2.position - v0.position))) / 2.0f) / bigTriangleArea;
     float v = (glm::length(glm::cross((v0.position - v1.position), (p - v1.position))) / 2.0f) / bigTriangleArea;
 
-    hitInfo.normal = glm::normalize(v0.normal * w + v1.normal * u + v2.normal * v);
+   // hitInfo.normal = glm::normalize(v0.normal * w + v1.normal * u + v2.normal * v);
     return glm::vec3{ w,u,v };
 
     /*
@@ -313,10 +314,7 @@ void BoundingVolumeHierarchy::nodeIntersection(std::vector<Node> nodes, Ray& ray
 
                 }
             }
-            if (hitInfo.hit) {
-                return;
-            }
-
+           
         }
 
         else {
@@ -351,24 +349,6 @@ bool BoundingVolumeHierarchy::intersect(Ray& ray, HitInfo& hitInfo) const
         rayAABBintersections.push(nodes[0]);
         nodeIntersection(nodes, ray, hitInfo, rayAABBintersections);
     }
-    
-   /*
-    for (const auto& mesh : m_pScene->meshes) { //for each mesh in the scene
-        for (const auto& tri : mesh.triangles) { // for each traingle in the mesh
-            const auto v0 = mesh.vertices[tri[0]]; //initiate triangle vertices
-            const auto v1 = mesh.vertices[tri[1]];
-            const auto v2 = mesh.vertices[tri[2]];
-            if (intersectRayWithTriangle(v0.position, v1.position, v2.position, ray, hitInfo)) { //if ray intersects with the triangle
-                glm::vec3 bayCoord = normalInterpolation(v0, v1, v2, ray, hitInfo); //calculate bay coordinates
-
-                hitInfo.material = mesh.material; //change hitInfo material
-                textureMapping(v0, v1, v2, ray, hitInfo); // texture coordinates
-                hitInfo.hit = true;   //make hit is true
-            }
-        }
-    }
-    */
-   
     // Intersect with spheres.
     for (const auto& sphere : m_pScene->spheres)
         hitInfo.hit |= intersectRayWithShape(sphere, ray, hitInfo);
@@ -378,6 +358,23 @@ bool BoundingVolumeHierarchy::intersect(Ray& ray, HitInfo& hitInfo) const
     return hitInfo.hit;
 
 }
+
+/*
+   for (const auto& mesh : m_pScene->meshes) { //for each mesh in the scene
+       for (const auto& tri : mesh.triangles) { // for each traingle in the mesh
+           const auto v0 = mesh.vertices[tri[0]]; //initiate triangle vertices
+           const auto v1 = mesh.vertices[tri[1]];
+           const auto v2 = mesh.vertices[tri[2]];
+           if (intersectRayWithTriangle(v0.position, v1.position, v2.position, ray, hitInfo)) { //if ray intersects with the triangle
+               glm::vec3 bayCoord = normalInterpolation(v0, v1, v2, ray, hitInfo); //calculate bay coordinates
+
+               hitInfo.material = mesh.material; //change hitInfo material
+               textureMapping(v0, v1, v2, ray, hitInfo); // texture coordinates
+               hitInfo.hit = true;   //make hit is true
+           }
+       }
+   }
+   */
 
 
 
