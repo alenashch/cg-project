@@ -50,10 +50,13 @@ BoundingVolumeHierarchy::BoundingVolumeHierarchy(Scene* pScene)
             triangle.center = { (V0.x + V1.x + V2.x) / 3, (V0.y + V1.y + V2.y) / 3, (V0.z + V1.z + V2.z) / 3 };     
             triangle.min = { x_min, y_min, z_min };
             triangle.max = { x_max, y_max, z_max };
-            triangle.V0.position=V0;
+            triangle.V0.position = V0;
             triangle.V1.position = V1;
             triangle.V2.position = V2;
             triangle.material = currentMesh.material;
+            triangle.V0.normal = currentMesh.vertices[currentMesh.triangles[j][0]].normal;
+            triangle.V1.normal = currentMesh.vertices[currentMesh.triangles[j][1]].normal;
+            triangle.V2.normal = currentMesh.vertices[currentMesh.triangles[j][2]].normal;
                 
             triangles.push_back(triangle);
         }
@@ -360,6 +363,29 @@ bool BoundingVolumeHierarchy::intersect(Ray& ray, HitInfo& hitInfo) const
 
 
     return hitInfo.hit;
+
+
+    /**bool hit = false;
+    // Intersect with all triangles of all meshes.
+    for (const auto& mesh : m_pScene->meshes) {
+        for (const auto& tri : mesh.triangles) {
+            const auto v0 = mesh.vertices[tri[0]];
+            const auto v1 = mesh.vertices[tri[1]];
+            const auto v2 = mesh.vertices[tri[2]];
+            if (intersectRayWithTriangle(v0.position, v1.position, v2.position, ray, hitInfo)) {
+                glm::vec3 bayCoord = normalInterpolation(v0, v1, v2, ray, hitInfo);
+
+                hitInfo.material = mesh.material;
+                textureMapping(v0, v1, v2, ray, hitInfo);
+                hit = true;
+            }
+        }
+    }
+    // Intersect with spheres.
+    for (const auto& sphere : m_pScene->spheres)
+        hit |= intersectRayWithShape(sphere, ray, hitInfo);
+    return hit;*/
+
 
 }
 
