@@ -74,6 +74,7 @@ static glm::vec3 getFinalColor(const Scene& scene, const BoundingVolumeHierarchy
     
 
     glm::vec3 color = glm::vec3(0.0f);
+   
 
     if (bvh.intersect(ray, hitInfo)) {
  
@@ -84,11 +85,13 @@ static glm::vec3 getFinalColor(const Scene& scene, const BoundingVolumeHierarchy
                 glm::vec3 diffuseTerm = diffuseOnly(hitInfo, point, hitInfo.normal, pointLight);
                 glm::vec3 specularTerm = phongSpecularOnly(hitInfo, point, hitInfo.normal, pointLight, ray.origin);
 
+                
                 color = color + diffuseTerm + specularTerm;
 
             }
         }
 
+        
         if (!(hitInfo.material.ks == glm::vec3(0))) //if ks is not black
 
         {
@@ -97,13 +100,10 @@ static glm::vec3 getFinalColor(const Scene& scene, const BoundingVolumeHierarchy
             Ray reflectedRay;
             reflectedRay.origin = ray.origin + (ray.t - (10e-5f) )* ray.direction;
             reflectedRay.direction = reflectedVec;
-           // reflectedRay.t = ray.t;
-            
-            
-
+           
            color += getFinalColor(scene, bvh, reflectedRay);   //if reflected ray doesnt hit , then return color 
 
-           //how will the recursion stop if it keeps intersecting (when the ray shoots from inside the mirror)
+          
 
         } 
     } 
@@ -112,6 +112,9 @@ static glm::vec3 getFinalColor(const Scene& scene, const BoundingVolumeHierarchy
     // Draw a color debug ray if the ray hits, else black
     //drawRay(ray, color);
     // Set the color of the pixel to color calculated if the ray hits,else black
+    drawRay(ray, color);
+    //drawRay(reflectedRay, color);
+
     return color;
     
     

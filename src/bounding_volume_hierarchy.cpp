@@ -1,10 +1,17 @@
 #include "bounding_volume_hierarchy.h"
+#include <framework/image.h>
+#include <optional>
 #include "draw.h"
 #include <queue>
 #include <limits>
+DISABLE_WARNINGS_PUSH()
 #include <glm/geometric.hpp>
 #include <glm/gtx/component_wise.hpp>
 #include <glm/vector_relational.hpp>
+DISABLE_WARNINGS_POP()
+
+
+
 
 
 
@@ -42,6 +49,11 @@ BoundingVolumeHierarchy::BoundingVolumeHierarchy(Scene* pScene)
             triangle.center = { (V0.x + V1.x + V2.x) / 3, (V0.y + V1.y + V2.y) / 3, (V0.z + V1.z + V2.z) / 3 };     
             triangle.min = { x_min, y_min, z_min };
             triangle.max = { x_max, y_max, z_max };
+            triangle.V0.position=V0;
+            triangle.V1.position = V1;
+            triangle.V2.position = V2;
+            triangle.material = currentMesh.material;
+                
             triangles.push_back(triangle);
         }
 
@@ -189,7 +201,9 @@ void BoundingVolumeHierarchy::constructBVHTree(std::vector<Triangle> triangles, 
 
 }
 
-
+void BoundingVolumeHierarchy::setHitT(Node node,float t) const {
+    node.hitT = t;
+}
 // Return the depth of the tree that you constructed. This is used to tell the
 // slider in the UI how many steps it should display.
 int BoundingVolumeHierarchy::numLevels()
@@ -210,7 +224,7 @@ void BoundingVolumeHierarchy::debugDraw(int level)
     }
 }
 
-glm::vec3 normalInterpolation(const auto& v0, const auto& v1, const auto& v2, Ray& ray, HitInfo& hitInfo) 
+glm::vec3 normalInterpolation(const auto& v0, const auto& v1, const auto& v2, Ray& ray, HitInfo& hitInfo)
 {
     glm::vec3 p = ray.origin + ray.t * ray.direction;
     float bigTriangleArea = glm::length(glm::cross((v1.position - v0.position), (v2.position - v0.position))) / 2.0f;
@@ -224,8 +238,8 @@ glm::vec3 normalInterpolation(const auto& v0, const auto& v1, const auto& v2, Ra
     return glm::vec3{ w,u,v };
 
     /*
-    * THIS CODE IS FOR DEBUG 
-    * 
+    * THIS CODE IS FOR DEBUG
+    *
     // Normal for vector v0
     Ray ray0;
     ray0.origin = v0.position;
@@ -261,6 +275,7 @@ glm::vec3 normalInterpolation(const auto& v0, const auto& v1, const auto& v2, Ra
     */
 }
 
+
 void textureMapping(const auto& v0, const auto& v1, const auto& v2, Ray& ray, HitInfo& hitInfo) {
 
     glm::vec3 bayCoord = normalInterpolation(v0, v1, v2, ray, hitInfo);
@@ -269,15 +284,57 @@ void textureMapping(const auto& v0, const auto& v1, const auto& v2, Ray& ray, Hi
 
 
     //texture lookup
-    std::optional <Image> textureImage = hitInfo.material.kdTexture;
+    std::optional<Image> textureImage = hitInfo.material.kdTexture;
     if (textureImage.has_value()) {
         
         hitInfo.texel = textureImage.value().getTexel(textureCoord);
     }
 
-    //Visual debug
-
     
+}
+
+
+void BoundingVolumeHierarchy::nodeIntersection(std::vector<Node> nodes, Ray& ray, HitInfo& hitInfo, std::priority_queue<Node,std::vector<Node>, compare> rayAABBintersections) const
+{   
+
+    while (!rayAABBintersections.empty()){
+        Node node = rayAABBintersections.top();
+        rayAABBintersections.pop();
+        if (node.isLeaf) { //check if the node is leaf
+            for (const auto& tri : node.triangles) { //for each triangle in the node, check intersection
+                if (intersectRayWithTriangle(tri.V0.position, tri.V1.position, tri.V2.position, ray, hitInfo)) {
+                    glm::vec3 bayCoord = normalInterpolation(tri.V0, tri.V1, tri.V2, ray, hitInfo);
+
+                    hitInfo.material = tri.material;
+                    textureMapping(tri.V0, tri.V1, tri.V2, ray, hitInfo);
+
+                    hitInfo.hit = true;
+
+
+                }
+            }
+            if (hitInfo.hit) {
+                return;
+            }
+
+        }
+
+        else {
+            if (intersectRayWithShape(nodes[node.index * 2 + 1].aabb, ray) > 0) {
+                setHitT(nodes[node.index * 2 + 1], intersectRayWithShape(nodes[node.index * 2 + 1].aabb, ray));
+                rayAABBintersections.push(nodes[node.index * 2 + 1]);
+            }
+                
+
+            if (intersectRayWithShape(nodes[node.index * 2 + 2].aabb, ray) > 0) {
+                setHitT(nodes[node.index * 2 + 2], intersectRayWithShape(nodes[node.index * 2 + 2].aabb, ray));
+                rayAABBintersections.push(nodes[node.index * 2 + 2]);
+            }
+                
+
+        }
+
+    }
 }
 
 
@@ -287,24 +344,42 @@ void textureMapping(const auto& v0, const auto& v1, const auto& v2, Ray& ray, Hi
 // file you like, including bounding_volume_hierarchy.h .
 bool BoundingVolumeHierarchy::intersect(Ray& ray, HitInfo& hitInfo) const
 {
-    bool hit = false;
-    // Intersect with all triangles of all meshes.
-    for (const auto& mesh : m_pScene->meshes) {
-        for (const auto& tri : mesh.triangles) {
-            const auto v0 = mesh.vertices[tri[0]];
+   
+    std::priority_queue<Node, std::vector<Node>, compare> rayAABBintersections;
+    if (intersectRayWithShape(nodes[0].aabb, ray) > 0 ) { //if ray intersects root node
+        setHitT(nodes[0], intersectRayWithShape(nodes[0].aabb, ray));
+        rayAABBintersections.push(nodes[0]);
+        nodeIntersection(nodes, ray, hitInfo, rayAABBintersections);
+    }
+    
+   /*
+    for (const auto& mesh : m_pScene->meshes) { //for each mesh in the scene
+        for (const auto& tri : mesh.triangles) { // for each traingle in the mesh
+            const auto v0 = mesh.vertices[tri[0]]; //initiate triangle vertices
             const auto v1 = mesh.vertices[tri[1]];
             const auto v2 = mesh.vertices[tri[2]];
-            if (intersectRayWithTriangle(v0.position, v1.position, v2.position, ray, hitInfo)) {
-               glm::vec3 bayCoord = normalInterpolation(v0, v1, v2, ray, hitInfo);
-               
-                hitInfo.material = mesh.material;
-                textureMapping(v0, v1, v2, ray, hitInfo);
-                hit = true;
+            if (intersectRayWithTriangle(v0.position, v1.position, v2.position, ray, hitInfo)) { //if ray intersects with the triangle
+                glm::vec3 bayCoord = normalInterpolation(v0, v1, v2, ray, hitInfo); //calculate bay coordinates
+
+                hitInfo.material = mesh.material; //change hitInfo material
+                textureMapping(v0, v1, v2, ray, hitInfo); // texture coordinates
+                hitInfo.hit = true;   //make hit is true
             }
         }
     }
+    */
+   
     // Intersect with spheres.
     for (const auto& sphere : m_pScene->spheres)
-        hit |= intersectRayWithShape(sphere, ray, hitInfo);
-    return hit;
+        hitInfo.hit |= intersectRayWithShape(sphere, ray, hitInfo);
+
+
+
+    return hitInfo.hit;
+
 }
+
+
+
+
+

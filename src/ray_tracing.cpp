@@ -1,4 +1,5 @@
 #include "ray_tracing.h"
+#include "bounding_volume_hierarchy.h"
 // Suppress warnings in third-party code.
 #include <framework/disable_all_warnings.h>
 DISABLE_WARNINGS_PUSH()
@@ -9,6 +10,7 @@ DISABLE_WARNINGS_POP()
 #include <cmath>
 #include <iostream>
 #include <limits>
+
 
 bool pointInTriangle(const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& n, const glm::vec3& p)
 {
@@ -188,8 +190,9 @@ bool intersectRayWithShape(const Sphere& sphere, Ray& ray, HitInfo& hitInfo)
 
 /// Input: an axis-aligned bounding box with the following parameters: minimum coordinates box.lower and maximum coordinates box.upper
 /// Output: if intersects then modify the hit parameter ray.t and return true, otherwise return false
-bool intersectRayWithShape(const AxisAlignedBox& box, Ray& ray)
+float intersectRayWithShape(const AxisAlignedBox& box, Ray& ray)
 {
+    float hitT = -1;
     float tx_min = (box.lower.x - ray.origin.x) / ray.direction.x;
     float tx_max = (box.upper.x - ray.origin.x) / ray.direction.x;
     float ty_min = (box.lower.y - ray.origin.y) / ray.direction.y;
@@ -255,20 +258,24 @@ bool intersectRayWithShape(const AxisAlignedBox& box, Ray& ray)
 
     if (t_in > 0.0f) {
 
-        if (ray.t < t_in)
-            return false;
+       // if (ray.t < t_in)
+          //  return false;
 
-        ray.t = t_in;
-        return true;
+        //ray.t = t_in;
+        hitT = t_in;
+       // return true;
+
     }
 
     if (t_in < 0.0f && t_out > 0.0f) {
-        if (ray.t < t_out)
-            return false;
+      // if (ray.t < t_out)
+          // return false;
 
-        ray.t = t_out;
-        return true;
+       // ray.t = t_out;
+        hitT = t_out;
+       // return true;
     }
 
-    return false;
+   // return false;
+    return hitT;
 }
