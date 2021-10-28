@@ -10,10 +10,9 @@ DISABLE_WARNINGS_POP()
 #include <iostream>
 #include <limits>
 
-const int RECURSION_LIMIT = 3;
 const float RAY_STEP = 1.0e-3f;     //The 'step' taken in a ray's direction to prevent wrong intersections. 
-const float LINE_SAMPLE_LIMIT = 100;
-const float LINE_PARALLELOGRAM_SAMPLE_LIMIT = 100;
+const float LINE_SAMPLE_LIMIT = 100; //number of random points on the segment light
+const float LINE_PARALLELOGRAM_SAMPLE_LIMIT = 100; //number of random points on the parallelogram
 
 static // Standard lambertian shading: Kd * dot(N,L), clamped to zero when negative. Where L is the light vector.
 glm::vec3 diffuseOnly(HitInfo hitInfo, glm::vec3& vertexPos, glm::vec3 lightPos)
@@ -44,8 +43,6 @@ glm::vec3 phongSpecularOnly(HitInfo hitInfo, glm::vec3& vertexPos, glm::vec3 lig
     }
 }
 
-//debug purposes
-//std::vector<glm::vec3> randomPointsOnLine(glm::vec3 ep0, glm::vec3 ep1, const int& amount) {
 std::vector<glm::vec3> randomPointsOnLine(const SegmentLight& segmentLine, const int& amount) {
     glm::vec3 ep0 = segmentLine.endpoint0;
     glm::vec3 ep1 = segmentLine.endpoint1; 
@@ -64,16 +61,10 @@ std::vector<glm::vec3> randomPointsOnLine(const SegmentLight& segmentLine, const
         glm::vec3 pointOnLine = { xValue, yValue, zValue };
         randomPoints.push_back(pointOnLine); 
     }
-    //std::generate(ep0, ep1,  )
-    //    std::generate(v.begin(), v.end(), [n = 0, &a]() mutable { return a * n++; });
-    //std::uniform_int_distribution<> x_val(ep0.x, ep1.x); 
-    //std::uniform_int_distribution<> y_val(ep0.y, ep1.y); 
-    //std::uniform_int_distribution<> z_val(ep0.z, ep1.z); 
     return randomPoints; 
 }
 
-//NEED TO CHECK ITS ON THE RIGHT SIDE
-//NEED TO GET THE COLOR
+
 std::vector<glm::vec3> randomPointsOnParallelogram(const ParallelogramLight& parallelogram, const int& amount) {
     std::vector<glm::vec3> randomPoints; 
     for (int i = 0; i < LINE_PARALLELOGRAM_SAMPLE_LIMIT; i++) {
@@ -120,16 +111,10 @@ glm::vec3 segmentShadow (const HitInfo& hitInfo, Ray& ray, const SegmentLight& l
 
         float pDistance = glm::distance(point_position, ep1); 
         float alpha = pDistance / lightDistance; 
-        glm::vec3 color = ((1 - alpha) * light.color0) + (alpha * light.color1); 
- 
-        //need to do something with the color here. 
+        glm::vec3 color = ((1 - alpha) * light.color0) + (alpha * light.color1);  
         PointLight point_sample = { point_position, color};
         if (!hardShadow(ray, point_sample, bvh))
         {
-            //need to fix this stil. 
-            //glm::vec3 diffuseOnly(HitInfo hitInfo, glm::vec3& vertexPos, glm::vec3& normal, glm::vec3 lightPos)
-            // //                glm::vec3 diffuseTerm = diffuseOnly(hitInfo, point_intersection, hitInfo.normal, pointLight);
-            //glm::vec3 phongSpecularOnly(HitInfo hitInfo, glm::vec3& vertexPos, glm::vec3& normal, PointLight light, glm::vec3& cameraPos)
             final_lighting += color * (diffuseOnly(hitInfo, intersection_point, point_position) + phongSpecularOnly(hitInfo, intersection_point, point_position, ray.origin));
         };
     }
@@ -173,16 +158,11 @@ glm::vec3 parallelogramShadow (const HitInfo& hitInfo, Ray& ray, const Parallelo
     {
         glm::vec3 intersection_point = ray.origin + (ray.t * ray.direction);
         float intersection_to_point_dist = glm::distance(point_position, intersection_point);
-        glm::vec3 color = bilinearInterpolation(point_position, lightDistancev0, lightDistancev1, light);
 
-        //need to do something with the color here. 
+        glm::vec3 color = bilinearInterpolation(point_position, lightDistancev0, lightDistancev1, light);
         PointLight point_sample = { point_position, color };
         if (!hardShadow(ray, point_sample, bvh))
         {
-            //need to fix this stil. 
-            //glm::vec3 diffuseOnly(HitInfo hitInfo, glm::vec3& vertexPos, glm::vec3& normal, glm::vec3 lightPos)
-            // //                glm::vec3 diffuseTerm = diffuseOnly(hitInfo, point_intersection, hitInfo.normal, pointLight);
-            //glm::vec3 phongSpecularOnly(HitInfo hitInfo, glm::vec3& vertexPos, glm::vec3& normal, PointLight light, glm::vec3& cameraPos)
             final_lighting += color * (diffuseOnly(hitInfo, intersection_point, point_position) + phongSpecularOnly(hitInfo, intersection_point, point_position, ray.origin));
         };
     }
@@ -203,7 +183,6 @@ glm::vec3 lightRay(Ray& ray, HitInfo& hitInfo, const Scene& scene, BoundingVolum
             const PointLight pointLight = std::get<PointLight>(light);
             if (!hardShadow(ray, pointLight, bvh))
             {
-                //return glm::vec3{ 1.0f }; 
                 glm::vec3 diffuseTerm = diffuseOnly(hitInfo, point_intersection, pointLight.position);
                 glm::vec3 specularTerm = phongSpecularOnly(hitInfo, point_intersection, pointLight.position, ray.origin);
                 lighting = lighting + pointLight.color * (diffuseTerm + specularTerm); 
@@ -219,36 +198,6 @@ glm::vec3 lightRay(Ray& ray, HitInfo& hitInfo, const Scene& scene, BoundingVolum
             const ParallelogramLight parallelogramLight = std::get<ParallelogramLight>(light);
             lighting = lighting + parallelogramShadow(hitInfo, ray, parallelogramLight, bvh);
         }
-
     }
     return lighting;
 }
-
-glm::vec3 recursiveRayTrace(Ray& intersectionRay, HitInfo& hitInfo, const Scene& scene,
-    BoundingVolumeHierarchy& bvh, int rayLevel)
-{
-    if (rayLevel < RECURSION_LIMIT) // Control the recursion level.
-    {
-        if (hitInfo.material.ks != glm::vec3{ 0.0f }) // Check if current intersection surface is specular.
-        {
-            // Construct the mirror reflection ray.
-            glm::vec3 reverse_incidence_direction = glm::normalize(glm::vec3{ -intersectionRay.direction.x, -intersectionRay.direction.y, -intersectionRay.direction.z }); // TODO: Normalisation could potentially be removed for optimisation.
-            glm::vec3 normalised_normal = glm::normalize(hitInfo.normal);
-            glm::vec3 reflection_ray_direction = (2.0f * glm::dot(reverse_incidence_direction, normalised_normal) * normalised_normal) - reverse_incidence_direction;
-            Ray reflection_ray = {
-                glm::vec3{intersectionRay.origin + (intersectionRay.t * intersectionRay.direction) + (RAY_STEP * reflection_ray_direction)}, // Slight offset in the reflection ray direction to prevent intersection with intersectionRay's intersection point.
-                reflection_ray_direction,
-                std::numeric_limits<float>::max() };
-
-            // Compute new ray lighting data and recursively add lighting data of subsequent mirror reflection rays.
-            HitInfo newRayInfo;
-            if (bvh.intersect(reflection_ray, newRayInfo))
-            {
-                return lightRay(intersectionRay, hitInfo, scene, bvh) + (hitInfo.material.ks * recursiveRayTrace(reflection_ray, newRayInfo, scene, bvh, ++rayLevel));
-            }
-        }
-        return lightRay(intersectionRay, hitInfo, scene, bvh);
-    }
-    return glm::vec3{ 0.0f };
-}
-

@@ -1,8 +1,7 @@
 #include "bounding_volume_hierarchy.h"
 #include "draw.h"
 #include "ray_tracing.h"
-#include "screen.h"
-//#include "lighting.h"
+#include "screen.h" 
 // Suppress warnings in third-party code.
 #include <framework/disable_all_warnings.h>
 DISABLE_WARNINGS_PUSH()
@@ -42,38 +41,6 @@ enum class ViewMode {
     RayTracing = 1
 };
 
-
-//static glm::vec3 getFinalColor(const Scene& scene, const BoundingVolumeHierarchy& bvh, Ray ray)
-//{
-//    HitInfo hitInfo;
-//
-//
-//    glm::vec3 color = glm::vec3(0.0f);
-//
-//    if (bvh.intersect(ray, hitInfo)) {
-//        // Draw a white debug ray if the ray hits.
-//        drawRay(ray, glm::vec3(1.0f));
-//        // Set the color of the pixel to white if the ray hits.
-//        //return glm::vec3(1.0f);
-//        glm::vec3 point = ray.origin + ray.t * ray.direction;
-//        for (const auto& light : scene.lights) {
-//            if (std::holds_alternative<PointLight>(light)) {
-//                PointLight pointLight = std::get<PointLight>(light);
-//                glm::vec3 diffuseTerm = diffuseOnly(hitInfo, point, pointLight.position);
-//                glm::vec3 specularTerm = phongSpecularOnly(hitInfo, point, pointLight.position, ray.origin);
-//                color = color + diffuseTerm + specularTerm;
-//
-//            }
-//        }
-//    }
-//
-//    return color;
-//}
-
-
-
-
-
 static glm::vec3 getFinalColor(const Scene& scene, BoundingVolumeHierarchy& bvh, Ray ray)
 {
     HitInfo hitInfo;
@@ -81,7 +48,6 @@ static glm::vec3 getFinalColor(const Scene& scene, BoundingVolumeHierarchy& bvh,
         // Draw a white debug ray if the ray hits.
         drawRay(ray, glm::vec3(1.0f));
         return lightRay(ray, hitInfo, scene, bvh);
-        //return recursiveRayTrace(ray, hitInfo, scene, bvh, 0);
     } else {
         // Draw a red debug ray if the ray missed.
         drawRay(ray, glm::vec3(1.0f, 0.0f, 0.0f));
@@ -159,27 +125,6 @@ static void renderRayTracing(const Scene& scene, const Trackball& camera, Boundi
 #endif
 }
 
-//debug purposes
-//int main() {
-//    glm::vec3 ep0 = { 0,0,0 }; 
-//    glm::vec3 ep1 = { 2,0,0 };
-//    glm::vec3 ep2 = { 0,2,0 }; 
-//    ParallelogramLight test; 
-//    test.v0 = ep0; 
-//    test.edge01 = ep1; 
-//    test.edge02 = ep2; 
-//    test.color0 = { 256, 0, 0 };
-//    test.color1 = { 0, 256, 0 };
-//    test.color2 = { 0, 0, 256 };
-//    test.color3 = { 0, 125, 0 };
-//
-//    std::vector x = randomPointsOnParallelogram(test, 7);
-//    for (glm::vec3 y : x) {
-//        std::cout << y.y << + "  ";
-//    }
-//
-//    return 0;
-//}
 int main(int argc, char** argv)
 {
     Trackball::printHelp();

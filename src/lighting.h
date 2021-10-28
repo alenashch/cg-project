@@ -26,6 +26,3 @@ glm::vec3 parallelogramShadow(const HitInfo& hitInfo, Ray& ray, const Parallelog
 bool hardShadow(const Ray& ray, const PointLight& light, BoundingVolumeHierarchy &bvh);
 
 glm::vec3 lightRay(Ray& ray, HitInfo& hitInfo, const Scene& scene, BoundingVolumeHierarchy& bvh);
-
-glm::vec3 recursiveRayTrace(Ray& intersectionRay, HitInfo& hitInfo, const Scene& scene,
-    BoundingVolumeHierarchy& bvh, int rayLevel);
