@@ -235,8 +235,7 @@ glm::vec3 normalInterpolation(const auto& v0, const auto& v1, const auto& v2, Ra
     float u = (glm::length(glm::cross((p - v0.position), (v2.position - v0.position))) / 2.0f) / bigTriangleArea;
     float v = (glm::length(glm::cross((v0.position - v1.position), (p - v1.position))) / 2.0f) / bigTriangleArea;
 
-    // hitInfo.normal = glm::normalize(v0.normal * w + v1.normal * u + v2.normal * v);
-    return glm::vec3{ w,u,v };
+    hitInfo.normal = glm::normalize(v0.normal * w + v1.normal * u + v2.normal * v);
 
     /*
     * THIS CODE IS FOR DEBUG
@@ -274,6 +273,7 @@ glm::vec3 normalInterpolation(const auto& v0, const auto& v1, const auto& v2, Ra
     drawRay(result, colour);
 
     */
+    return glm::vec3{ w,u,v };
 }
 
 
