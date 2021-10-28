@@ -322,8 +322,7 @@ void BoundingVolumeHierarchy::nodeIntersection(std::vector<Node> nodes, Ray& ray
                 setHitT(nodes[node.index * 2 + 1], intersectRayWithShape(nodes[node.index * 2 + 1].aabb, ray));
                 rayAABBintersections.push(nodes[node.index * 2 + 1]);
                 //Visual debug
-                if (intersectRayWithShape(nodes[node.index * 2 + 1].aabb, ray) != -1)
-                    drawAABB(nodes[node.index * 2 + 1].aabb, DrawMode::Wireframe, glm::vec3(0.0f, 1.0f, 0.0f), 0.2f);
+                drawAABB(nodes[node.index * 2 + 1].aabb, DrawMode::Wireframe, glm::vec3(0.0f, 1.0f, 0.0f), 0.2f);
             }
                 
 
@@ -331,8 +330,7 @@ void BoundingVolumeHierarchy::nodeIntersection(std::vector<Node> nodes, Ray& ray
                 setHitT(nodes[node.index * 2 + 2], intersectRayWithShape(nodes[node.index * 2 + 2].aabb, ray));
                 rayAABBintersections.push(nodes[node.index * 2 + 2]);
                 //Visual debug
-                if (intersectRayWithShape(nodes[node.index * 2 + 2].aabb, ray) != -1)
-                    drawAABB(nodes[node.index * 2 + 2].aabb, DrawMode::Wireframe, glm::vec3(0.0f, 1.0f, 0.0f), 0.2f);
+                drawAABB(nodes[node.index * 2 + 2].aabb, DrawMode::Wireframe, glm::vec3(0.0f, 1.0f, 0.0f), 0.2f);
             }
                 
 
