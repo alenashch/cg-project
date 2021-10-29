@@ -389,6 +389,8 @@ int main(int argc, char** argv)
                 // Call getFinalColor for the debug ray. Ignore the result but tell the function that it should
                 // draw the rays instead.
                 enableDrawRay = true;
+                glDepthFunc(GL_LEQUAL); /// new
+                glDisable(GL_LIGHTING); // new
                 (void)getFinalColor(scene, bvh, *optDebugRay);
                 enableDrawRay = false;
             }

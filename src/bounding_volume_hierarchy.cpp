@@ -9,6 +9,8 @@ DISABLE_WARNINGS_PUSH()
 #include <glm/geometric.hpp>
 #include <glm/gtx/component_wise.hpp>
 #include <glm/vector_relational.hpp>
+#include <gl/glew.h>
+#include <glm/gtc/type_ptr.hpp>
 DISABLE_WARNINGS_POP()
 
 
@@ -314,6 +316,17 @@ void BoundingVolumeHierarchy::nodeIntersection(std::vector<Node> nodes, Ray& ray
 
                     hitInfo.hit = true;
 
+                    // Visual debug, draws the intersected triangle
+                    glBegin(GL_TRIANGLES);
+                    glNormal3fv(glm::value_ptr(tri.V0.normal));
+                    glVertex3fv(glm::value_ptr(tri.V0.position));
+
+                    glNormal3fv(glm::value_ptr(tri.V1.normal));
+                    glVertex3fv(glm::value_ptr(tri.V1.position));
+
+                    glNormal3fv(glm::value_ptr(tri.V2.normal));
+                    glVertex3fv(glm::value_ptr(tri.V2.position));
+                    glEnd();
 
                 }
             }
@@ -325,7 +338,7 @@ void BoundingVolumeHierarchy::nodeIntersection(std::vector<Node> nodes, Ray& ray
                 setHitT(nodes[node.index * 2 + 1], intersectRayWithShape(nodes[node.index * 2 + 1].aabb, ray));
                 rayAABBintersections.push(nodes[node.index * 2 + 1]);
                 //Visual debug
-                drawAABB(nodes[node.index * 2 + 1].aabb, DrawMode::Wireframe, glm::vec3(0.0f, 1.0f, 0.0f), 0.2f);
+                drawAABB(nodes[node.index * 2 + 1].aabb, DrawMode::Wireframe, glm::vec3(0.0f, 0.0f, 1.0f), 0.2f);
             }
                 
 
@@ -333,7 +346,7 @@ void BoundingVolumeHierarchy::nodeIntersection(std::vector<Node> nodes, Ray& ray
                 setHitT(nodes[node.index * 2 + 2], intersectRayWithShape(nodes[node.index * 2 + 2].aabb, ray));
                 rayAABBintersections.push(nodes[node.index * 2 + 2]);
                 //Visual debug
-                drawAABB(nodes[node.index * 2 + 2].aabb, DrawMode::Wireframe, glm::vec3(0.0f, 1.0f, 0.0f), 0.2f);
+                drawAABB(nodes[node.index * 2 + 2].aabb, DrawMode::Wireframe, glm::vec3(0.0f, 0.0f, 1.0f), 0.2f);
             }
                 
 
