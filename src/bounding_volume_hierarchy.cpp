@@ -228,6 +228,14 @@ void BoundingVolumeHierarchy::debugDraw(int level)
             drawAABB(nodes[i].aabb, DrawMode::Wireframe, glm::vec3(0.0f, 1.0f, 0.0f), 0.2f);
         }
     }
+
+    /*
+    * Debug for leaf nodes
+    *for (int i = 0; i < nodes.size(); i++) {
+        if (nodes[i].isLeaf == true) {
+            drawAABB(nodes[i].aabb, DrawMode::Wireframe, glm::vec3(1.0f, 0.0f, 0.0f), 0.2f);
+        }
+    }*/
 }
 
 glm::vec3 normalInterpolation(const auto& v0, const auto& v1, const auto& v2, Ray& ray, HitInfo& hitInfo)
