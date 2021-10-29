@@ -43,7 +43,7 @@ enum class ViewMode {
 };
 
  // Standard lambertian shading: Kd * dot(N,L), clamped to zero when negative. Where L is the light vector.
-static glm::vec3 diffuseOnly(HitInfo hitInfo, glm::vec3& vertexPos, glm::vec3& normal, PointLight light)
+static glm::vec3 getFinalColor(const Scene& scene, BoundingVolumeHierarchy& bvh, Ray ray)
 {
     glm::vec3 color = glm::vec3(0.0f);
 
