@@ -45,8 +45,11 @@ glm::vec3 Image::getTexel(const glm::vec2& textureCoordinates) const
     // The pixels are stored in row major order.
     return glm::vec3(0.0f);
 #else
-    int i = round(textureCoordinates.x * m_width - 0.5);
-    int j = round(textureCoordinates.y * m_height - 0.5);
+    glm::vec2 mapTextCoord = glm::vec2(std::abs(textureCoordinates.x), std::abs(textureCoordinates.y));
+    mapTextCoord.x = mapTextCoord.x - (int)mapTextCoord.x;
+    mapTextCoord.y = mapTextCoord.y - (int)mapTextCoord.y;
+    int i = round(mapTextCoord.x * m_width );
+    int j = round(mapTextCoord.y * m_height);
     //const glm::ivec2 pixel = glm::ivec2(textureCoordinates * glm::vec2(m_width, m_height) + 0.5f);
     const glm::ivec2 pixel = glm::ivec2(i,j);
     return m_pixels[(pixel.y * m_width) + pixel.x];

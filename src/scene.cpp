@@ -12,6 +12,7 @@ Scene loadScene(SceneType type, const std::filesystem::path& dataDir)
         std::move(std::begin(subMeshes), std::end(subMeshes), std::back_inserter(scene.meshes));
         scene.lights.push_back(PointLight { glm::vec3(-1, 1, -1), glm::vec3(1) });
     } break;
+
     case Cube: {
         // Load a 3D model of a cube with 12 triangles
         auto subMeshes = loadMesh(dataDir / "cube.obj");
@@ -78,7 +79,7 @@ Scene loadScene(SceneType type, const std::filesystem::path& dataDir)
     } break;
     case Custom: {
         // === Replace custom.obj by your own 3D model (or call your 3D model custom.obj) ===
-        auto subMeshes = loadMesh(dataDir / "custom.obj");
+        auto subMeshes = loadMesh(dataDir / "quad.obj");
         std::move(std::begin(subMeshes), std::end(subMeshes), std::back_inserter(scene.meshes));
         // === CHANGE THE LIGHTING IF DESIRED ===
         scene.lights.push_back(PointLight { glm::vec3(-1, 1, -1), glm::vec3(1) });

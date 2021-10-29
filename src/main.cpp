@@ -44,7 +44,10 @@ static glm::vec3 diffuseOnly(HitInfo hitInfo, glm::vec3& vertexPos, glm::vec3& n
 {
 
     glm::vec3 lightVec = light.position - vertexPos;
-    glm::vec3 lambertian = light.color* hitInfo.material.kd * glm::dot(normal, glm::normalize(lightVec));
+    glm::vec3 lambertian = light.color * hitInfo.material.kd * glm::dot(normal, glm::normalize(lightVec));
+    if (hitInfo.material.kdTexture) {
+        lambertian = light.color * hitInfo.texel * glm::dot(normal, glm::normalize(lightVec));
+    }
 
     if (glm::dot(normal, glm::normalize(lightVec)) < -10e-3f) return glm::vec3(0.0f);
         
@@ -108,8 +111,6 @@ static glm::vec3 getFinalColor(const Scene& scene, const BoundingVolumeHierarchy
         } 
         
     } 
-
-    color += hitInfo.texel;
    
     drawRay(ray, color);
     
