@@ -1,7 +1,7 @@
 #include "bounding_volume_hierarchy.h"
 #include "draw.h"
 #include "ray_tracing.h"
-#include "screen.h"
+#include "screen.h" 
 // Suppress warnings in third-party code.
 #include <framework/disable_all_warnings.h>
 DISABLE_WARNINGS_PUSH()
@@ -19,17 +19,18 @@ DISABLE_WARNINGS_POP()
 #include <cstdlib>
 #include <filesystem>
 #include <framework/image.h>
-#include <framework/imguizmo.h>
+#include <framework/imguizmo.h> 
 #include <framework/trackball.h>
 #include <framework/variant_helper.h>
 #include <framework/window.h>
 #include <fstream>
 #include <iostream>
-#include <optional>
+#include <optional> 
 #include <random>
 #include <string>
 #include <type_traits>
 #include <variant>
+#include "lighting.h"
 
 constexpr glm::ivec2 windowResolution { 800, 800 };
 const std::filesystem::path dataPath { DATA_DIR };
@@ -74,50 +75,35 @@ static glm::vec3 phongSpecularOnly(HitInfo hitInfo, glm::vec3& vertexPos, glm::v
 static glm::vec3 getFinalColor(const Scene& scene, const BoundingVolumeHierarchy& bvh, Ray ray)
 {
     HitInfo hitInfo;
-    
-
     glm::vec3 color = glm::vec3(0.0f);
-   
+    glm::vec3 point = ray.origin + ray.t * ray.direction;
 
     if (bvh.intersect(ray, hitInfo)) {
- 
-        glm::vec3 point = ray.origin + ray.t * ray.direction;
-        for (const auto& light : scene.lights) {
-            if (std::holds_alternative<PointLight>(light)) {
-                PointLight pointLight = std::get<PointLight>(light);
-                glm::vec3 diffuseTerm = diffuseOnly(hitInfo, point, hitInfo.normal, pointLight);
-                glm::vec3 specularTerm = phongSpecularOnly(hitInfo, point, hitInfo.normal, pointLight, ray.origin);
+        color = lightRay(ray, hitInfo, scene, bvh);
+    }
 
-                
-                color = color + diffuseTerm + specularTerm;
 
-            }
-        }
+    if (!(hitInfo.material.ks == glm::vec3(0))) //if ks is not black
+    {
+        glm::vec3 LVector = glm::normalize(ray.origin - point);
+        glm::vec3 reflectedVec = 2 * glm::dot(LVector, hitInfo.normal) * hitInfo.normal - (ray.origin + ray.t * ray.direction);
+        Ray reflectedRay;
+        reflectedRay.origin = ray.origin + (ray.t - (10e-5f)) * ray.direction;
+        reflectedRay.direction = reflectedVec;
 
-        
-        if (!(hitInfo.material.ks == glm::vec3(0))) //if ks is not black
+        color += getFinalColor(scene, bvh, reflectedRay);   //if reflected ray doesnt hit , then return color 
 
-        {
-            glm::vec3 LVector = glm::normalize(ray.origin - point);
-            glm::vec3 reflectedVec = 2 * glm::dot(LVector, hitInfo.normal) * hitInfo.normal - (ray.origin + ray.t * ray.direction) ;
-            Ray reflectedRay;
-            reflectedRay.origin = ray.origin + (ray.t - (10e-5f) )* ray.direction;
-            reflectedRay.direction = reflectedVec;
-           
-           color += getFinalColor(scene, bvh, reflectedRay);   //if reflected ray doesnt hit , then return color 
 
-          
 
         } 
         
     } 
    
     drawRay(ray, color);
-    
     return color;
-  
 
-   
+
+
 
     // Lights are stored in a single array (scene.lights) where each item can be either a PointLight, SegmentLight or ParallelogramLight.
     // You can check whether a light at index i is a PointLight using std::holds_alternative:
@@ -150,12 +136,13 @@ static glm::vec3 getFinalColor(const Scene& scene, const BoundingVolumeHierarchy
     // loadScene function in scene.cpp). Custom lights will not be visible in rasterization view.
 }
 
+
 static void setOpenGLMatrices(const Trackball& camera);
 static void drawLightsOpenGL(const Scene& scene, const Trackball& camera, int selectedLight);
 static void drawSceneOpenGL(const Scene& scene);
 
 // This is the main rendering function. You are free to change this function in any way (including the function signature).
-static void renderRayTracing(const Scene& scene, const Trackball& camera, const BoundingVolumeHierarchy& bvh, Screen& screen)
+static void renderRayTracing(const Scene& scene, const Trackball& camera, BoundingVolumeHierarchy& bvh, Screen& screen)
 {
 #ifndef NDEBUG
     // Single threaded in debug mode
@@ -166,7 +153,7 @@ static void renderRayTracing(const Scene& scene, const Trackball& camera, const 
                 float(x) / windowResolution.x * 2.0f - 1.0f,
                 float(y) / windowResolution.y * 2.0f - 1.0f
             };
-            const Ray cameraRay = camera.generateRay(normalizedPixelPos);
+            Ray cameraRay = camera.generateRay(normalizedPixelPos);
             screen.setPixel(x, y, getFinalColor(scene, bvh, cameraRay));
         }
     }
@@ -480,7 +467,7 @@ static void drawLightsOpenGL(const Scene& scene, const Trackball& camera, int se
                 [](const ParallelogramLight& light) {
                     glPushAttrib(GL_ALL_ATTRIB_BITS);
                     glBegin(GL_QUADS);
-                    glColor3fv(glm::value_ptr(light.color0));
+                     (glm::value_ptr(light.color0));
                     glVertex3fv(glm::value_ptr(light.v0));
                     glColor3fv(glm::value_ptr(light.color1));
                     glVertex3fv(glm::value_ptr(light.v0 + light.edge01));
