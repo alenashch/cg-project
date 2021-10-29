@@ -1,4 +1,5 @@
 #include "ray_tracing.h"
+#include "bounding_volume_hierarchy.h"
 // Suppress warnings in third-party code.
 #include <framework/disable_all_warnings.h>
 DISABLE_WARNINGS_PUSH()
@@ -9,6 +10,7 @@ DISABLE_WARNINGS_POP()
 #include <cmath>
 #include <iostream>
 #include <limits>
+
 
 bool pointInTriangle(const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& n, const glm::vec3& p)
 {
@@ -272,3 +274,4 @@ bool intersectRayWithShape(const AxisAlignedBox& box, Ray& ray)
 
     return false;
 }
+

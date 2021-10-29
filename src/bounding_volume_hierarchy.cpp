@@ -1,10 +1,20 @@
 #include "bounding_volume_hierarchy.h"
+#include <framework/image.h>
+#include <optional>
 #include "draw.h"
 #include <queue>
 #include <limits>
+#include <iostream>
+DISABLE_WARNINGS_PUSH()
 #include <glm/geometric.hpp>
 #include <glm/gtx/component_wise.hpp>
 #include <glm/vector_relational.hpp>
+#include <gl/glew.h>
+#include <glm/gtc/type_ptr.hpp>
+DISABLE_WARNINGS_POP()
+
+
+
 
 
 
@@ -42,6 +52,14 @@ BoundingVolumeHierarchy::BoundingVolumeHierarchy(Scene* pScene)
             triangle.center = { (V0.x + V1.x + V2.x) / 3, (V0.y + V1.y + V2.y) / 3, (V0.z + V1.z + V2.z) / 3 };     
             triangle.min = { x_min, y_min, z_min };
             triangle.max = { x_max, y_max, z_max };
+            triangle.V0.position = V0;
+            triangle.V1.position = V1;
+            triangle.V2.position = V2;
+            triangle.material = currentMesh.material;
+            triangle.V0.normal = currentMesh.vertices[currentMesh.triangles[j][0]].normal;
+            triangle.V1.normal = currentMesh.vertices[currentMesh.triangles[j][1]].normal;
+            triangle.V2.normal = currentMesh.vertices[currentMesh.triangles[j][2]].normal;
+                
             triangles.push_back(triangle);
         }
 
@@ -189,7 +207,9 @@ void BoundingVolumeHierarchy::constructBVHTree(std::vector<Triangle> triangles, 
 
 }
 
-
+void BoundingVolumeHierarchy::setHitT(Node node,float t) const {
+    node.hitT = t;
+}
 // Return the depth of the tree that you constructed. This is used to tell the
 // slider in the UI how many steps it should display.
 int BoundingVolumeHierarchy::numLevels()
@@ -210,7 +230,7 @@ void BoundingVolumeHierarchy::debugDraw(int level)
     }
 }
 
-glm::vec3 normalInterpolation(const auto& v0, const auto& v1, const auto& v2, Ray& ray, HitInfo& hitInfo) 
+glm::vec3 normalInterpolation(const auto& v0, const auto& v1, const auto& v2, Ray& ray, HitInfo& hitInfo)
 {
     glm::vec3 p = ray.origin + ray.t * ray.direction;
     float bigTriangleArea = glm::length(glm::cross((v1.position - v0.position), (v2.position - v0.position))) / 2.0f;
@@ -221,11 +241,10 @@ glm::vec3 normalInterpolation(const auto& v0, const auto& v1, const auto& v2, Ra
     float v = (glm::length(glm::cross((v0.position - v1.position), (p - v1.position))) / 2.0f) / bigTriangleArea;
 
     hitInfo.normal = glm::normalize(v0.normal * w + v1.normal * u + v2.normal * v);
-    return glm::vec3{ w,u,v };
 
     /*
-    * THIS CODE IS FOR DEBUG 
-    * 
+    * THIS CODE IS FOR DEBUG
+    *
     // Normal for vector v0
     Ray ray0;
     ray0.origin = v0.position;
@@ -259,7 +278,9 @@ glm::vec3 normalInterpolation(const auto& v0, const auto& v1, const auto& v2, Ra
     drawRay(result, colour);
 
     */
+    return glm::vec3{ w,u,v };
 }
+
 
 void textureMapping(const auto& v0, const auto& v1, const auto& v2, Ray& ray, HitInfo& hitInfo) {
 
@@ -269,15 +290,156 @@ void textureMapping(const auto& v0, const auto& v1, const auto& v2, Ray& ray, Hi
 
 
     //texture lookup
-    std::optional <Image> textureImage = hitInfo.material.kdTexture;
+    std::optional<Image> textureImage = hitInfo.material.kdTexture;
     if (textureImage.has_value()) {
         
         hitInfo.texel = textureImage.value().getTexel(textureCoord);
     }
 
-    //Visual debug
-
     
+}
+
+
+
+float intersectWithBox(const AxisAlignedBox& box, Ray& ray)
+{
+    float hitT = -1;
+    float tx_min = (box.lower.x - ray.origin.x) / ray.direction.x;
+    float tx_max = (box.upper.x - ray.origin.x) / ray.direction.x;
+    float ty_min = (box.lower.y - ray.origin.y) / ray.direction.y;
+    float ty_max = (box.upper.y - ray.origin.y) / ray.direction.y;
+    float tz_min = (box.lower.z - ray.origin.z) / ray.direction.z;
+    float tz_max = (box.upper.z - ray.origin.z) / ray.direction.z;
+
+
+    float t_inx, t_outx;
+    float t_iny, t_outy;
+    float t_inz, t_outz;
+    float t_in, t_out;
+
+    if (tx_min < tx_max) {
+        t_inx = tx_min;
+        t_outx = tx_max;
+    }
+    else {
+        t_inx = tx_max;
+        t_outx = tx_min;
+    }
+
+    if (ty_min < ty_max) {
+        t_iny = ty_min;
+        t_outy = ty_max;
+    }
+    else {
+        t_iny = ty_max;
+        t_outy = ty_min;
+    }
+
+    if (tz_min < tz_max) {
+        t_inz = tz_min;
+        t_outz = tz_max;
+    }
+    else {
+        t_inz = tz_max;
+        t_outz = tz_min;
+    }
+
+
+
+    if (t_inx > t_iny && t_inx > t_inz)
+        t_in = t_inx;
+    else if (t_iny > t_inx && t_iny > t_inz)
+        t_in = t_iny;
+    else
+        t_in = t_inz;
+
+
+    if (t_outx < t_outy && t_outx < t_outz)
+        t_out = t_outx;
+    else if (t_outy < t_outx && t_outy < t_outz)
+        t_out = t_outy;
+    else
+        t_out = t_outz;
+
+
+    if (t_in > t_out || t_out < 0)
+        return -1.0f;
+
+
+
+    if (t_in > 0.0f) {
+
+        if (ray.t < t_in)
+           return -1.0f;
+
+        hitT = t_in;
+
+    }
+
+    if (t_in < 0.0f && t_out > 0.0f) {
+        if (ray.t < t_out)
+           return -1;
+
+        hitT = t_out;
+    }
+
+    return hitT;
+}
+
+
+void BoundingVolumeHierarchy::nodeIntersection(std::vector<Node> nodes, Ray& ray, HitInfo& hitInfo, std::priority_queue<Node, std::vector<Node>, compare> rayAABBintersections) const
+{   
+
+    while (!rayAABBintersections.empty()){
+        Node node = rayAABBintersections.top();
+        rayAABBintersections.pop();
+        if (node.isLeaf) { //check if the node is leaf
+            for (const auto& tri : node.triangles) { //for each triangle in the node, check intersection
+                if (intersectRayWithTriangle(tri.V0.position, tri.V1.position, tri.V2.position, ray, hitInfo)) {
+                    glm::vec3 bayCoord = normalInterpolation(tri.V0, tri.V1, tri.V2, ray, hitInfo);
+
+                    hitInfo.material = tri.material;
+                    textureMapping(tri.V0, tri.V1, tri.V2, ray, hitInfo);
+
+                    hitInfo.hit = true;
+
+                    // Visual debug, draws the intersected triangle
+                    glBegin(GL_TRIANGLES);
+                    glNormal3fv(glm::value_ptr(tri.V0.normal));
+                    glVertex3fv(glm::value_ptr(tri.V0.position));
+
+                    glNormal3fv(glm::value_ptr(tri.V1.normal));
+                    glVertex3fv(glm::value_ptr(tri.V1.position));
+
+                    glNormal3fv(glm::value_ptr(tri.V2.normal));
+                    glVertex3fv(glm::value_ptr(tri.V2.position));
+                    glEnd();
+
+                }
+            }
+           
+        }
+
+        else {
+
+            if (intersectWithBox(nodes[node.index * 2 + 1].aabb, ray)>0) {
+                setHitT(nodes[node.index * 2 + 1], intersectWithBox(nodes[node.index * 2 + 1].aabb, ray));
+                rayAABBintersections.push(nodes[node.index * 2 + 1]);
+                //Visual debug
+                drawAABB(nodes[node.index * 2 + 1].aabb, DrawMode::Wireframe, glm::vec3(0.0f, 0.0f, 1.0f), 0.2f);
+            }
+
+
+            if (intersectWithBox(nodes[node.index * 2 + 2].aabb, ray)>0) {
+                setHitT(nodes[node.index * 2 + 2], intersectWithBox(nodes[node.index * 2 + 2].aabb, ray));
+                rayAABBintersections.push(nodes[node.index * 2 + 2]);
+                //Visual debug
+                drawAABB(nodes[node.index * 2 + 2].aabb, DrawMode::Wireframe, glm::vec3(0.0f, 0.0f, 1.0f), 0.2f);
+            }
+
+        }
+
+    }
 }
 
 
@@ -287,7 +449,23 @@ void textureMapping(const auto& v0, const auto& v1, const auto& v2, Ray& ray, Hi
 // file you like, including bounding_volume_hierarchy.h .
 bool BoundingVolumeHierarchy::intersect(Ray& ray, HitInfo& hitInfo) const
 {
-    bool hit = false;
+   
+    std::priority_queue<Node, std::vector<Node>, compare> rayAABBintersections;
+    if (intersectWithBox(nodes[0].aabb, ray) > 0 ) { //if ray intersects root node
+        setHitT(nodes[0], intersectWithBox(nodes[0].aabb, ray));
+        rayAABBintersections.push(nodes[0]);
+        nodeIntersection(nodes, ray, hitInfo, rayAABBintersections);
+    }
+    // Intersect with spheres.
+    for (const auto& sphere : m_pScene->spheres)
+        hitInfo.hit |= intersectRayWithShape(sphere, ray, hitInfo);
+
+
+
+    return hitInfo.hit;
+
+
+    /**bool hit = false;
     // Intersect with all triangles of all meshes.
     for (const auto& mesh : m_pScene->meshes) {
         for (const auto& tri : mesh.triangles) {
@@ -295,8 +473,8 @@ bool BoundingVolumeHierarchy::intersect(Ray& ray, HitInfo& hitInfo) const
             const auto v1 = mesh.vertices[tri[1]];
             const auto v2 = mesh.vertices[tri[2]];
             if (intersectRayWithTriangle(v0.position, v1.position, v2.position, ray, hitInfo)) {
-               glm::vec3 bayCoord = normalInterpolation(v0, v1, v2, ray, hitInfo);
-               
+                glm::vec3 bayCoord = normalInterpolation(v0, v1, v2, ray, hitInfo);
+
                 hitInfo.material = mesh.material;
                 textureMapping(v0, v1, v2, ray, hitInfo);
                 hit = true;
@@ -306,5 +484,29 @@ bool BoundingVolumeHierarchy::intersect(Ray& ray, HitInfo& hitInfo) const
     // Intersect with spheres.
     for (const auto& sphere : m_pScene->spheres)
         hit |= intersectRayWithShape(sphere, ray, hitInfo);
-    return hit;
+    return hit;*/
+
+
 }
+
+/*
+   for (const auto& mesh : m_pScene->meshes) { //for each mesh in the scene
+       for (const auto& tri : mesh.triangles) { // for each traingle in the mesh
+           const auto v0 = mesh.vertices[tri[0]]; //initiate triangle vertices
+           const auto v1 = mesh.vertices[tri[1]];
+           const auto v2 = mesh.vertices[tri[2]];
+           if (intersectRayWithTriangle(v0.position, v1.position, v2.position, ray, hitInfo)) { //if ray intersects with the triangle
+               glm::vec3 bayCoord = normalInterpolation(v0, v1, v2, ray, hitInfo); //calculate bay coordinates
+
+               hitInfo.material = mesh.material; //change hitInfo material
+               textureMapping(v0, v1, v2, ray, hitInfo); // texture coordinates
+               hitInfo.hit = true;   //make hit is true
+           }
+       }
+   }
+   */
+
+
+
+
+

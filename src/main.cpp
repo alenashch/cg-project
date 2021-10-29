@@ -74,6 +74,7 @@ static glm::vec3 getFinalColor(const Scene& scene, const BoundingVolumeHierarchy
     
 
     glm::vec3 color = glm::vec3(0.0f);
+   
 
     if (bvh.intersect(ray, hitInfo)) {
  
@@ -84,11 +85,13 @@ static glm::vec3 getFinalColor(const Scene& scene, const BoundingVolumeHierarchy
                 glm::vec3 diffuseTerm = diffuseOnly(hitInfo, point, hitInfo.normal, pointLight);
                 glm::vec3 specularTerm = phongSpecularOnly(hitInfo, point, hitInfo.normal, pointLight, ray.origin);
 
+                
                 color = color + diffuseTerm + specularTerm;
 
             }
         }
 
+        
         if (!(hitInfo.material.ks == glm::vec3(0))) //if ks is not black
 
         {
@@ -97,32 +100,21 @@ static glm::vec3 getFinalColor(const Scene& scene, const BoundingVolumeHierarchy
             Ray reflectedRay;
             reflectedRay.origin = ray.origin + (ray.t - (10e-5f) )* ray.direction;
             reflectedRay.direction = reflectedVec;
-           // reflectedRay.t = ray.t;
-            
-            
-
+           
            color += getFinalColor(scene, bvh, reflectedRay);   //if reflected ray doesnt hit , then return color 
 
-           //how will the recursion stop if it keeps intersecting (when the ray shoots from inside the mirror)
+          
 
         } 
+        
     } 
 
     color += hitInfo.texel;
-    // Draw a color debug ray if the ray hits, else black
-    //drawRay(ray, color);
-    // Set the color of the pixel to color calculated if the ray hits,else black
+   
+    drawRay(ray, color);
+    
     return color;
-    
-    
-    //else {
-        // Draw a red debug ray if the ray missed.
-      //  drawRay(ray, glm::vec3(1.0f, 0.0f, 0.0f));
-        // Set the color of the pixel to black if the ray misses.
-        //return glm::vec3(0.0f);
-   // }
-
-    
+  
 
    
 
@@ -397,6 +389,8 @@ int main(int argc, char** argv)
                 // Call getFinalColor for the debug ray. Ignore the result but tell the function that it should
                 // draw the rays instead.
                 enableDrawRay = true;
+                glDepthFunc(GL_LEQUAL); /// new
+                glDisable(GL_LIGHTING); // new
                 (void)getFinalColor(scene, bvh, *optDebugRay);
                 enableDrawRay = false;
             }
