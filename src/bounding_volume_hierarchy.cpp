@@ -434,7 +434,7 @@ void BoundingVolumeHierarchy::nodeIntersection(std::vector<Node> nodes, Ray& ray
                 setHitT(nodes[node.index * 2 + 1], intersectWithBox(nodes[node.index * 2 + 1].aabb, ray));
                 rayAABBintersections.push(nodes[node.index * 2 + 1]);
                 //Visual debug
-                drawAABB(nodes[node.index * 2 + 1].aabb, DrawMode::Wireframe, glm::vec3(0.0f, 0.0f, 1.0f), 0.2f);
+                //drawAABB(nodes[node.index * 2 + 1].aabb, DrawMode::Wireframe, glm::vec3(0.0f, 0.0f, 1.0f), 0.2f);
             }
 
 
@@ -442,7 +442,7 @@ void BoundingVolumeHierarchy::nodeIntersection(std::vector<Node> nodes, Ray& ray
                 setHitT(nodes[node.index * 2 + 2], intersectWithBox(nodes[node.index * 2 + 2].aabb, ray));
                 rayAABBintersections.push(nodes[node.index * 2 + 2]);
                 //Visual debug
-                drawAABB(nodes[node.index * 2 + 2].aabb, DrawMode::Wireframe, glm::vec3(0.0f, 0.0f, 1.0f), 0.2f);
+                //drawAABB(nodes[node.index * 2 + 2].aabb, DrawMode::Wireframe, glm::vec3(0.0f, 0.0f, 1.0f), 0.2f);
             }
 
         }
@@ -458,22 +458,22 @@ void BoundingVolumeHierarchy::nodeIntersection(std::vector<Node> nodes, Ray& ray
 bool BoundingVolumeHierarchy::intersect(Ray& ray, HitInfo& hitInfo) const
 {
    
-    std::priority_queue<Node, std::vector<Node>, compare> rayAABBintersections;
-    if (intersectWithBox(nodes[0].aabb, ray) > 0 ) { //if ray intersects root node
-        setHitT(nodes[0], intersectWithBox(nodes[0].aabb, ray));
-        rayAABBintersections.push(nodes[0]);
-        nodeIntersection(nodes, ray, hitInfo, rayAABBintersections);
-    }
-    // Intersect with spheres.
-    for (const auto& sphere : m_pScene->spheres)
-        hitInfo.hit |= intersectRayWithShape(sphere, ray, hitInfo);
+    //std::priority_queue<Node, std::vector<Node>, compare> rayAABBintersections;
+    //if (intersectWithBox(nodes[0].aabb, ray) > 0 ) { //if ray intersects root node
+    //    setHitT(nodes[0], intersectWithBox(nodes[0].aabb, ray));
+    //    rayAABBintersections.push(nodes[0]);
+    //    nodeIntersection(nodes, ray, hitInfo, rayAABBintersections);
+    //}
+    //// Intersect with spheres.
+    //for (const auto& sphere : m_pScene->spheres)
+    //    hitInfo.hit |= intersectRayWithShape(sphere, ray, hitInfo);
 
 
 
-    return hitInfo.hit;
+    //return hitInfo.hit;
 
 
-    /**bool hit = false;
+    bool hit = false;
     // Intersect with all triangles of all meshes.
     for (const auto& mesh : m_pScene->meshes) {
         for (const auto& tri : mesh.triangles) {
@@ -492,7 +492,7 @@ bool BoundingVolumeHierarchy::intersect(Ray& ray, HitInfo& hitInfo) const
     // Intersect with spheres.
     for (const auto& sphere : m_pScene->spheres)
         hit |= intersectRayWithShape(sphere, ray, hitInfo);
-    return hit;*/
+    return hit;
 
 
 }
