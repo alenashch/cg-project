@@ -34,6 +34,8 @@ DISABLE_WARNINGS_POP()
 
 constexpr glm::ivec2 windowResolution { 800, 800 };
 const std::filesystem::path dataPath { DATA_DIR };
+const float RECURSIVE_AMOUNT = 10.0f;
+float count = 0.0f;
 
 enum class ViewMode {
     Rasterization = 0,
@@ -42,33 +44,37 @@ enum class ViewMode {
 
 static glm::vec3 getFinalColor(const Scene& scene, BoundingVolumeHierarchy& bvh, Ray ray)
 {
-    HitInfo hitInfo;
     glm::vec3 color = glm::vec3(0.0f);
-    glm::vec3 point = ray.origin + ray.t * ray.direction;
 
-    if (bvh.intersect(ray, hitInfo)) {
-        color = lightRay(ray, hitInfo, scene, bvh);
-    }
+        HitInfo hitInfo;
+
+        glm::vec3 point = ray.origin + ray.t * ray.direction;
+
+        if (bvh.intersect(ray, hitInfo)) {
+            color = lightRay(ray, hitInfo, scene, bvh);
+        }
+
+        if (count <= RECURSIVE_AMOUNT) {
+            if (!(hitInfo.material.ks == glm::vec3(0))) //if ks is not black
+            {
+                glm::vec3 LVector = glm::normalize(ray.origin - point);
+                glm::vec3 reflectedVec = 2 * glm::dot(LVector, hitInfo.normal) * hitInfo.normal - (ray.origin + ray.t * ray.direction);
+                Ray reflectedRay;
+                reflectedRay.origin = ray.origin + (ray.t - (10e-5f)) * ray.direction;
+                reflectedRay.direction = reflectedVec;
+
+                color += getFinalColor(scene, bvh, reflectedRay);   //if reflected ray doesnt hit , then return color 
 
 
-    if (!(hitInfo.material.ks == glm::vec3(0))) //if ks is not black
-    {
-        glm::vec3 LVector = glm::normalize(ray.origin - point);
-        glm::vec3 reflectedVec = 2 * glm::dot(LVector, hitInfo.normal) * hitInfo.normal - (ray.origin + ray.t * ray.direction);
-        Ray reflectedRay;
-        reflectedRay.origin = ray.origin + (ray.t - (10e-5f)) * ray.direction;
-        reflectedRay.direction = reflectedVec;
 
-        color += getFinalColor(scene, bvh, reflectedRay);   //if reflected ray doesnt hit , then return color 
+            }
 
-
-
-    }
-
-    color += hitInfo.texel;
-    drawRay(ray, color);
+            color += hitInfo.texel;
+            drawRay(ray, color);
+            count++; 
+            return color;
+        }
     return color;
-
 
 
 
