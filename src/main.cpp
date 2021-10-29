@@ -42,7 +42,8 @@ enum class ViewMode {
     RayTracing = 1
 };
 
-static glm::vec3 getFinalColor(const Scene& scene, BoundingVolumeHierarchy& bvh, Ray ray)
+ // Standard lambertian shading: Kd * dot(N,L), clamped to zero when negative. Where L is the light vector.
+static glm::vec3 diffuseOnly(HitInfo hitInfo, glm::vec3& vertexPos, glm::vec3& normal, PointLight light)
 {
     glm::vec3 color = glm::vec3(0.0f);
 
@@ -66,14 +67,12 @@ static glm::vec3 getFinalColor(const Scene& scene, BoundingVolumeHierarchy& bvh,
                 color += getFinalColor(scene, bvh, reflectedRay);   //if reflected ray doesnt hit , then return color 
 
 
-
-            }
-
-            color += hitInfo.texel;
-            drawRay(ray, color);
-            count++; 
-            return color;
-        }
+        } 
+        
+    } 
+   
+    drawRay(ray, color);
+    count++; 
     return color;
 
 
