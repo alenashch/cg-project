@@ -32,7 +32,6 @@ DISABLE_WARNINGS_POP()
 #include <variant>
 #include "lighting.h"
 
-
 constexpr glm::ivec2 windowResolution { 800, 800 };
 const std::filesystem::path dataPath { DATA_DIR };
 
@@ -44,16 +43,34 @@ enum class ViewMode {
 static glm::vec3 getFinalColor(const Scene& scene, BoundingVolumeHierarchy& bvh, Ray ray)
 {
     HitInfo hitInfo;
+    glm::vec3 color = glm::vec3(0.0f);
+    glm::vec3 point = ray.origin + ray.t * ray.direction;
+
     if (bvh.intersect(ray, hitInfo)) {
-        // Draw a white debug ray if the ray hits.
-        drawRay(ray, glm::vec3(1.0f));
-        return lightRay(ray, hitInfo, scene, bvh);
-    } else {
-        // Draw a red debug ray if the ray missed.
-        drawRay(ray, glm::vec3(1.0f, 0.0f, 0.0f));
-        // Set the color of the pixel to black if the ray misses.
-        return glm::vec3(0.0f);
+        color = lightRay(ray, hitInfo, scene, bvh);
     }
+
+
+    if (!(hitInfo.material.ks == glm::vec3(0))) //if ks is not black
+    {
+        glm::vec3 LVector = glm::normalize(ray.origin - point);
+        glm::vec3 reflectedVec = 2 * glm::dot(LVector, hitInfo.normal) * hitInfo.normal - (ray.origin + ray.t * ray.direction);
+        Ray reflectedRay;
+        reflectedRay.origin = ray.origin + (ray.t - (10e-5f)) * ray.direction;
+        reflectedRay.direction = reflectedVec;
+
+        color += getFinalColor(scene, bvh, reflectedRay);   //if reflected ray doesnt hit , then return color 
+
+
+
+    }
+
+    color += hitInfo.texel;
+    drawRay(ray, color);
+    return color;
+
+
+
 
     // Lights are stored in a single array (scene.lights) where each item can be either a PointLight, SegmentLight or ParallelogramLight.
     // You can check whether a light at index i is a PointLight using std::holds_alternative:
@@ -86,6 +103,7 @@ static glm::vec3 getFinalColor(const Scene& scene, BoundingVolumeHierarchy& bvh,
     // loadScene function in scene.cpp). Custom lights will not be visible in rasterization view.
 }
 
+
 static void setOpenGLMatrices(const Trackball& camera);
 static void drawLightsOpenGL(const Scene& scene, const Trackball& camera, int selectedLight);
 static void drawSceneOpenGL(const Scene& scene);
@@ -102,7 +120,7 @@ static void renderRayTracing(const Scene& scene, const Trackball& camera, Boundi
                 float(x) / windowResolution.x * 2.0f - 1.0f,
                 float(y) / windowResolution.y * 2.0f - 1.0f
             };
-            const Ray cameraRay = camera.generateRay(normalizedPixelPos);
+            Ray cameraRay = camera.generateRay(normalizedPixelPos);
             screen.setPixel(x, y, getFinalColor(scene, bvh, cameraRay));
         }
     }
@@ -326,6 +344,8 @@ int main(int argc, char** argv)
                 // Call getFinalColor for the debug ray. Ignore the result but tell the function that it should
                 // draw the rays instead.
                 enableDrawRay = true;
+                glDepthFunc(GL_LEQUAL); /// new
+                glDisable(GL_LIGHTING); // new
                 (void)getFinalColor(scene, bvh, *optDebugRay);
                 enableDrawRay = false;
             }

@@ -1,4 +1,5 @@
 #include "ray_tracing.h"
+#include "bounding_volume_hierarchy.h"
 // Suppress warnings in third-party code.
 #include <framework/disable_all_warnings.h>
 DISABLE_WARNINGS_PUSH()
@@ -10,9 +11,33 @@ DISABLE_WARNINGS_POP()
 #include <iostream>
 #include <limits>
 
+
 bool pointInTriangle(const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& n, const glm::vec3& p)
 {
-    float A, a1, a2, a3;
+
+
+    glm::vec3 crossv0 = glm::cross((v2 - v1), (p - v1));
+    glm::vec3 crossv1 = glm::cross((v0 - v2), (p - v2));
+    glm::vec3 crossv2 = glm::cross((v1 - v0), (p - v0));
+
+
+    float alpha = glm::dot(crossv0, n) / glm::dot(n, n);
+    float beta = glm::dot(crossv1, n) / glm::dot(n, n);
+    float gamma = glm::dot(crossv2, n) / glm::dot(n, n);
+
+
+    if (alpha < 0)
+        return false;
+    if (beta < 0)
+        return false;
+    if (gamma < 0)
+        return false;
+
+
+
+
+    return true;
+    /*float A, a1, a2, a3;
     float a, b, c;
     A = glm::length(glm::cross(v1 - v0, v2 - v0)) / 2.0f;
     a1 = glm::length(glm::cross(v2 - v1, p - v1)) / 2.0f;
@@ -31,6 +56,7 @@ bool pointInTriangle(const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& 
         return true;
 
     return false;
+    */
 }
 
 bool intersectRayWithPlane(const Plane& plane, Ray& ray)
@@ -76,18 +102,6 @@ bool intersectRayWithTriangle(const glm::vec3& v0, const glm::vec3& v1, const gl
 
     glm::vec3 p = ray.origin + ray.t * ray.direction;
     if (pointInTriangle(v0, v1, v2, plane.normal, p)) {
-        float bigTriangleArea = glm::dot((v1 - v0), (v2 - v0)) / 2.0f;
-
-        //P = w*v0 + u*v1 + v*v2
-
-        float w = (glm::length(glm::cross((p - v1), (v2 - v1))) / 2.0f) / bigTriangleArea;
-        float u = (glm::length(glm::cross((p - v0), (v2 - v0))) / 2.0f) / bigTriangleArea;
-        float v = (glm::length(glm::cross((v0 - v1), (p - v1))) / 2.0f) / bigTriangleArea;
-
-        glm::vec3 normalV0 = glm::cross(v2 - v0, v1 - v0);
-        glm::vec3 normalV1 = glm::cross(v0 - v1, v2 - v1);
-        glm::vec3 normalV2 = glm::cross(v0 - v2, v1 - v2);
-
         hitInfo.normal = glm::normalize(plane.normal);
         return true;
     }
@@ -105,7 +119,7 @@ bool intersectRayWithShape(const Sphere& sphere, Ray& ray, HitInfo& hitInfo)
     float C = pow(ray.origin.x - sphere.center.x, 2.0) + pow(ray.origin.y - sphere.center.y, 2.0) + pow(ray.origin.z - sphere.center.z, 2.0) - pow(sphere.radius, 2.0);
     float t_0, t_1;
 
-
+    
 
     float discriminant = pow(B, 2.0) - (4.0f * A * C);
 
@@ -260,3 +274,4 @@ bool intersectRayWithShape(const AxisAlignedBox& box, Ray& ray)
 
     return false;
 }
+
