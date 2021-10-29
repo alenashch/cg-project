@@ -40,7 +40,39 @@ enum class ViewMode {
     RayTracing = 1
 };
 
-static glm::vec3 getFinalColor(const Scene& scene, BoundingVolumeHierarchy& bvh, Ray ray)
+ // Standard lambertian shading: Kd * dot(N,L), clamped to zero when negative. Where L is the light vector.
+static glm::vec3 diffuseOnly(HitInfo hitInfo, glm::vec3& vertexPos, glm::vec3& normal, PointLight light)
+{
+
+    glm::vec3 lightVec = light.position - vertexPos;
+    glm::vec3 lambertian = light.color * hitInfo.material.kd * glm::dot(normal, glm::normalize(lightVec));
+    if (hitInfo.material.kdTexture) {
+        lambertian = light.color * hitInfo.texel * glm::dot(normal, glm::normalize(lightVec));
+    }
+
+    if (glm::dot(normal, glm::normalize(lightVec)) < -10e-3f) return glm::vec3(0.0f);
+        
+    return lambertian;
+}
+
+
+static glm::vec3 phongSpecularOnly(HitInfo hitInfo, glm::vec3& vertexPos, glm::vec3& normal, PointLight light, glm::vec3& cameraPos)
+{
+    glm::vec3 viewVector = cameraPos - vertexPos;
+    viewVector = glm::normalize(viewVector);
+    glm::vec3 lightVec = light.position - vertexPos;
+    lightVec = glm::normalize(lightVec);
+    glm::vec3 reflectionV = 2 * glm::dot(lightVec, normal) * normal - lightVec;
+    if (glm::dot(lightVec, normal) < -10e-3f) {
+        return glm::vec3(0, 0, 0);
+    }
+    else {
+        return glm::vec3{ hitInfo.material.ks * glm::pow(glm::dot(viewVector, reflectionV), std::round( hitInfo.material.shininess)) };
+    }
+}
+
+
+static glm::vec3 getFinalColor(const Scene& scene, const BoundingVolumeHierarchy& bvh, Ray ray)
 {
     HitInfo hitInfo;
     glm::vec3 color = glm::vec3(0.0f);
@@ -63,9 +95,10 @@ static glm::vec3 getFinalColor(const Scene& scene, BoundingVolumeHierarchy& bvh,
 
 
 
-    }
-
-    color += hitInfo.texel;
+        } 
+        
+    } 
+   
     drawRay(ray, color);
     return color;
 
