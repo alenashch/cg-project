@@ -300,7 +300,94 @@ void textureMapping(const auto& v0, const auto& v1, const auto& v2, Ray& ray, Hi
 }
 
 
-void BoundingVolumeHierarchy::nodeIntersection(std::vector<Node> nodes, Ray& ray, HitInfo& hitInfo, std::priority_queue<Node,std::vector<Node>, compare> rayAABBintersections) const
+
+float intersectWithBox(const AxisAlignedBox& box, Ray& ray)
+{
+    float hitT = -1;
+    float tx_min = (box.lower.x - ray.origin.x) / ray.direction.x;
+    float tx_max = (box.upper.x - ray.origin.x) / ray.direction.x;
+    float ty_min = (box.lower.y - ray.origin.y) / ray.direction.y;
+    float ty_max = (box.upper.y - ray.origin.y) / ray.direction.y;
+    float tz_min = (box.lower.z - ray.origin.z) / ray.direction.z;
+    float tz_max = (box.upper.z - ray.origin.z) / ray.direction.z;
+
+
+    float t_inx, t_outx;
+    float t_iny, t_outy;
+    float t_inz, t_outz;
+    float t_in, t_out;
+
+    if (tx_min < tx_max) {
+        t_inx = tx_min;
+        t_outx = tx_max;
+    }
+    else {
+        t_inx = tx_max;
+        t_outx = tx_min;
+    }
+
+    if (ty_min < ty_max) {
+        t_iny = ty_min;
+        t_outy = ty_max;
+    }
+    else {
+        t_iny = ty_max;
+        t_outy = ty_min;
+    }
+
+    if (tz_min < tz_max) {
+        t_inz = tz_min;
+        t_outz = tz_max;
+    }
+    else {
+        t_inz = tz_max;
+        t_outz = tz_min;
+    }
+
+
+
+    if (t_inx > t_iny && t_inx > t_inz)
+        t_in = t_inx;
+    else if (t_iny > t_inx && t_iny > t_inz)
+        t_in = t_iny;
+    else
+        t_in = t_inz;
+
+
+    if (t_outx < t_outy && t_outx < t_outz)
+        t_out = t_outx;
+    else if (t_outy < t_outx && t_outy < t_outz)
+        t_out = t_outy;
+    else
+        t_out = t_outz;
+
+
+    if (t_in > t_out || t_out < 0)
+        return -1.0f;
+
+
+
+    if (t_in > 0.0f) {
+
+        if (ray.t < t_in)
+           return -1.0f;
+
+        hitT = t_in;
+
+    }
+
+    if (t_in < 0.0f && t_out > 0.0f) {
+        if (ray.t < t_out)
+           return -1;
+
+        hitT = t_out;
+    }
+
+    return hitT;
+}
+
+
+void BoundingVolumeHierarchy::nodeIntersection(std::vector<Node> nodes, Ray& ray, HitInfo& hitInfo, std::priority_queue<Node, std::vector<Node>, compare> rayAABBintersections) const
 {   
 
     while (!rayAABBintersections.empty()){
@@ -334,21 +421,21 @@ void BoundingVolumeHierarchy::nodeIntersection(std::vector<Node> nodes, Ray& ray
         }
 
         else {
-            if (intersectRayWithShape(nodes[node.index * 2 + 1].aabb, ray) > 0) {
-                setHitT(nodes[node.index * 2 + 1], intersectRayWithShape(nodes[node.index * 2 + 1].aabb, ray));
+
+            if (intersectWithBox(nodes[node.index * 2 + 1].aabb, ray)>0) {
+                setHitT(nodes[node.index * 2 + 1], intersectWithBox(nodes[node.index * 2 + 1].aabb, ray));
                 rayAABBintersections.push(nodes[node.index * 2 + 1]);
                 //Visual debug
                 drawAABB(nodes[node.index * 2 + 1].aabb, DrawMode::Wireframe, glm::vec3(0.0f, 0.0f, 1.0f), 0.2f);
             }
-                
 
-            if (intersectRayWithShape(nodes[node.index * 2 + 2].aabb, ray) > 0) {
-                setHitT(nodes[node.index * 2 + 2], intersectRayWithShape(nodes[node.index * 2 + 2].aabb, ray));
+
+            if (intersectWithBox(nodes[node.index * 2 + 2].aabb, ray)>0) {
+                setHitT(nodes[node.index * 2 + 2], intersectWithBox(nodes[node.index * 2 + 2].aabb, ray));
                 rayAABBintersections.push(nodes[node.index * 2 + 2]);
                 //Visual debug
                 drawAABB(nodes[node.index * 2 + 2].aabb, DrawMode::Wireframe, glm::vec3(0.0f, 0.0f, 1.0f), 0.2f);
             }
-                
 
         }
 
@@ -364,8 +451,8 @@ bool BoundingVolumeHierarchy::intersect(Ray& ray, HitInfo& hitInfo) const
 {
    
     std::priority_queue<Node, std::vector<Node>, compare> rayAABBintersections;
-    if (intersectRayWithShape(nodes[0].aabb, ray) > 0 ) { //if ray intersects root node
-        setHitT(nodes[0], intersectRayWithShape(nodes[0].aabb, ray));
+    if (intersectWithBox(nodes[0].aabb, ray) > 0 ) { //if ray intersects root node
+        setHitT(nodes[0], intersectWithBox(nodes[0].aabb, ray));
         rayAABBintersections.push(nodes[0]);
         nodeIntersection(nodes, ray, hitInfo, rayAABBintersections);
     }
